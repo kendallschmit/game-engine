@@ -9,11 +9,9 @@
 // Textures
 extern GLuint ktex_load(char *path)
 {
-    kprint("ktex_load(\"%s\")", path);
-    fflush(stdout);
     FILE *f = fopen(path, "r");
     if (f == NULL) {
-        perror("Unable to load image");
+        kprint("Unable to load image \"%s\"", path);
         return 0;
     }
 
@@ -35,6 +33,7 @@ extern GLuint ktex_load(char *path)
     uint8_t pixel_depth = header_bytes[16];
     uint8_t img_descriptor = header_bytes[17];
 
+    /*
     kprint("id_len: %" PRIu8 "", id_len);
     kprint("color_map_type: %" PRIu8 "", color_map_type);
     kprint("image_type: %" PRIu8 "", image_type);
@@ -45,15 +44,15 @@ extern GLuint ktex_load(char *path)
     kprint("height: %" PRIu16 "", width);
     kprint("pixel_depth: %" PRIu8 "", pixel_depth);
     kprint("img_descriptor: %" PRIu8 "", img_descriptor);
-    fflush(stdout);
+    */
     if (id_len > 0 && (fread(NULL, sizeof(uint8_t), id_len, f) != id_len)) {
-        kprint("Unable to read id \"%s\"", path);
+        kprint("Unable to read id of \"%s\"", path);
         fclose(f);
         return 0;
     }
     if (colomap_len > 0 && (fread(NULL, sizeof(uint8_t), colomap_len, f)
             != colomap_len)) {
-        kprint("Unable to read colomap \"%s\"", path);
+        kprint("Unable to read colomap of \"%s\"", path);
         fclose(f);
         return 0;
     }
@@ -63,7 +62,7 @@ extern GLuint ktex_load(char *path)
     while (px < width * height) {
         uint8_t l; // Run length
         if (fread(&l, 1, 1, f) != 1) {
-            kprint("Unable to read run length");
+            kprint("Unable to read run length in \"%s\"", path);
             fclose(f);
             return 0;
         }
@@ -72,7 +71,7 @@ extern GLuint ktex_load(char *path)
             l++;
             uint8_t v[4];
             if (fread(v, 1, 4, f) != 4) {
-                kprint("Unable to read pixel value");
+                kprint("Unable to read pixel value in \"%s\"", path);
                 fclose(f);
                 return 0;
             }
@@ -89,7 +88,7 @@ extern GLuint ktex_load(char *path)
             uint8_t v[4];
             while (l--) {
                 if (fread(v, 1, 4, f) != 4) {
-                    kprint("Unable to read pixel value");
+                    kprint("Unable to read pixel value in \"%s\"", path);
                     fclose(f);
                     return 0;
                 }
@@ -101,7 +100,6 @@ extern GLuint ktex_load(char *path)
         }
     }
     fclose(f);
-    kprint("px %zu", px - 512 * 512);
 
     GLuint tex; // Name of tex
     glGenTextures(1, &tex); // Generate texture
@@ -112,5 +110,6 @@ extern GLuint ktex_load(char *path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
+    kprint("Loaded image \"%s\"", path);
     return tex;
 }

@@ -26,7 +26,6 @@ struct kobj {
 void game(GLFWwindow *window) {
     srand(time(NULL));
 
-    kprint("Loading textures");
     GLuint tex_akko = ktex_load("res/tga/akko.tga");
     GLuint tex_ritsu = ktex_load("res/tga/ritsu.tga");
 
