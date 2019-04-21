@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "kutil.h"
+
 // Textures
 extern GLuint ktex_load(char *path)
 {
-    printf("ktex_load(\"%s\")\n", path);
+    kprint("ktex_load(\"%s\")", path);
     fflush(stdout);
     FILE *f = fopen(path, "r");
     if (f == NULL) {
@@ -17,7 +19,7 @@ extern GLuint ktex_load(char *path)
 
     uint8_t header_bytes[18];
     if (fread(header_bytes, sizeof(uint8_t), 18, f) != 18) {
-        printf("Unable to load image \"%s\"", path);
+        kprint("Unable to load image \"%s\"", path);
         fclose(f);
         return 0;
     }
@@ -33,25 +35,25 @@ extern GLuint ktex_load(char *path)
     uint8_t pixel_depth = header_bytes[16];
     uint8_t img_descriptor = header_bytes[17];
 
-    printf("id_len: %" PRIu8 "\n", id_len);
-    printf("color_map_type: %" PRIu8 "\n", color_map_type);
-    printf("image_type: %" PRIu8 "\n", image_type);
-    printf("colomap_fei: %" PRIu16 "\n", colomap_fei);
-    printf("colomap_len: %" PRIu16 "\n", colomap_len);
-    printf("colomap_bpp: %" PRIu8 "\n", colomap_bpp);
-    printf("width: %" PRIu16 "\n", width);
-    printf("height: %" PRIu16 "\n", width);
-    printf("pixel_depth: %" PRIu8 "\n", pixel_depth);
-    printf("img_descriptor: %" PRIu8 "\n", img_descriptor);
+    kprint("id_len: %" PRIu8 "", id_len);
+    kprint("color_map_type: %" PRIu8 "", color_map_type);
+    kprint("image_type: %" PRIu8 "", image_type);
+    kprint("colomap_fei: %" PRIu16 "", colomap_fei);
+    kprint("colomap_len: %" PRIu16 "", colomap_len);
+    kprint("colomap_bpp: %" PRIu8 "", colomap_bpp);
+    kprint("width: %" PRIu16 "", width);
+    kprint("height: %" PRIu16 "", width);
+    kprint("pixel_depth: %" PRIu8 "", pixel_depth);
+    kprint("img_descriptor: %" PRIu8 "", img_descriptor);
     fflush(stdout);
     if (id_len > 0 && (fread(NULL, sizeof(uint8_t), id_len, f) != id_len)) {
-        printf("Unable to read id \"%s\"", path);
+        kprint("Unable to read id \"%s\"", path);
         fclose(f);
         return 0;
     }
     if (colomap_len > 0 && (fread(NULL, sizeof(uint8_t), colomap_len, f)
             != colomap_len)) {
-        printf("Unable to read colomap \"%s\"", path);
+        kprint("Unable to read colomap \"%s\"", path);
         fclose(f);
         return 0;
     }
@@ -61,7 +63,7 @@ extern GLuint ktex_load(char *path)
     while (px < width * height) {
         uint8_t l; // Run length
         if (fread(&l, 1, 1, f) != 1) {
-            printf("Unable to read run length\n");
+            kprint("Unable to read run length");
             fclose(f);
             return 0;
         }
@@ -70,7 +72,7 @@ extern GLuint ktex_load(char *path)
             l++;
             uint8_t v[4];
             if (fread(v, 1, 4, f) != 4) {
-                printf("Unable to read pixel value\n");
+                kprint("Unable to read pixel value");
                 fclose(f);
                 return 0;
             }
@@ -87,7 +89,7 @@ extern GLuint ktex_load(char *path)
             uint8_t v[4];
             while (l--) {
                 if (fread(v, 1, 4, f) != 4) {
-                    printf("Unable to read pixel value\n");
+                    kprint("Unable to read pixel value");
                     fclose(f);
                     return 0;
                 }
@@ -99,7 +101,7 @@ extern GLuint ktex_load(char *path)
         }
     }
     fclose(f);
-    printf("px %zu\n", px - 512 * 512);
+    kprint("px %zu", px - 512 * 512);
 
     GLuint tex; // Name of tex
     glGenTextures(1, &tex); // Generate texture
