@@ -1,8 +1,9 @@
 SRC += game/src/main.c \
+game/src/kutil.c \
 game/src/shad.c \
 game/src/game.c \
 game/src/kdraw.c \
-game/src/ktex.c
+game/src/ktex.c \
 $(BUILD)game/%.o: CFLAGS += -pedantic -Werror
 
 # game binary

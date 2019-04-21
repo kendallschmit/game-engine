@@ -2,9 +2,15 @@
 #define KUTIL_H
 
 #include <stdio.h>
+#include <stdbool.h>
+
+extern bool kutil_kprint_needs_header(char const *file, char const *func);
 
 #define kprint(...) do {\
-    printf("%s::%s(): ", __FILE__, __func__);\
+    if (kutil_kprint_needs_header(__FILE__, __func__)) {\
+        printf("%s::%s():\n", __FILE__, __func__);\
+    }\
+    printf(" * ");\
     printf(__VA_ARGS__);\
     printf("\n");\
     fflush(stdout);\
