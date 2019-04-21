@@ -3,8 +3,12 @@
 
 #include <stdio.h>
 
+#ifndef KMODULE
+#define KMODULE "unknown"
+#endif
+
 #define kprint(...) do {\
-    printf("%s:%d %s(): ", __FILE__, __LINE__, __func__);\
+    printf("%s::%s(): ", KMODULE, __func__);\
     printf(__VA_ARGS__);\
     printf("\n");\
     fflush(stdout);\

@@ -1,7 +1,11 @@
+.SUFFIXES:
+
+# compiler stuff
 CC=gcc-8
 CFLAGS += -O2 -std=c11
 LDFLAGS += -lm
 
+# directories
 BUILD=build/
 BIN=bin/
 

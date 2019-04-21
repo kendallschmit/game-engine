@@ -6,8 +6,6 @@
 #include "kutil.h"
 #include "shad.h"
 
-
-
 #define OBJ_MAX 1000
 // kdraw objects
 static size_t nobjects[KDRAW_PROJ_MAX];
