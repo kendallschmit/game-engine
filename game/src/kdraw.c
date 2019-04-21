@@ -29,7 +29,16 @@ static GLfloat identity4[] = {
     0.0, 0.0, 0.0, 1.0,
 };
 
-#define mat_set(mat, c, r, v) do { (mat)[(c) * 4 + (r)] = (v); } while(0);
+static void print_mat(GLfloat *mat) {
+    for (int i = 0; i < 4; i++) {
+        int k = 4 * i;
+        kprint("%g %g %g %g\n",
+                mat[k], mat[k + 1], mat[k + 2], mat[k + 3]);
+    }
+}
+
+// Each row is an x, y, z, w
+#define mat_set(mat, r, c, v) do { (mat)[(r) * 4 + (c)] = (v); } while(0);
 static void gen_projmat(GLfloat *mat, GLfloat angle, GLfloat ratio,
         GLfloat near, GLfloat far)
 {
@@ -38,23 +47,22 @@ static void gen_projmat(GLfloat *mat, GLfloat angle, GLfloat ratio,
     mat_set(mat, 0, 0, 1 / (ratio * tan_half_angle));
     mat_set(mat, 1, 1, 1 / (tan_half_angle));
     mat_set(mat, 2, 2, -(far + near) / (far - near));
-    mat_set(mat, 3, 2, -1);
-    mat_set(mat, 2, 3, -(2 * far * near) / (far - near));
+    mat_set(mat, 2, 3, -1);
+    mat_set(mat, 3, 2, -(2 * far * near) / (far - near));
 }
 
 // Extern
 extern void kdraw_init(GLFWwindow *window)
 {
-    kprint("HERE I AM");
-    glEnable(GL_DEPTH_TEST);
     glUseProgram(shad_simple_prog);
     modelmatuloc = glGetUniformLocation(shad_simple_prog, "modelmat");
     viewmatuloc = glGetUniformLocation(shad_simple_prog, "viewmat");
     projmatuloc = glGetUniformLocation(shad_simple_prog, "projmat");
+    glEnable(GL_DEPTH_TEST);
 
     // View matrix
     memcpy(viewmat, identity4, sizeof(viewmat));
-    mat_set(viewmat, 3, 3, VIEW_DIST);
+    mat_set(viewmat, 3, 2, -VIEW_DIST);
     glUniformMatrix4fv(viewmatuloc, 1, GL_FALSE, viewmat);
 
     // Need to adapt to the aspect ration when we start
@@ -92,7 +100,6 @@ extern void kdraw_draw(GLFWwindow *window)
             | GL_ACCUM_BUFFER_BIT
             | GL_STENCIL_BUFFER_BIT);
 
-
     // Model matrix (changed for each model)
     GLfloat modelmat[16];
     memcpy(modelmat, identity4, sizeof(identity4));
@@ -100,9 +107,9 @@ extern void kdraw_draw(GLFWwindow *window)
         glUniformMatrix4fv(projmatuloc, 1, GL_FALSE, projmats[p]);
         for (GLuint i = 0; i < nobjects[p]; i++) {
             // Assign model matrix
-            modelmat[3 * 4 + 0] = objects[p][i].pos.x;
-            modelmat[3 * 4 + 1] = objects[p][i].pos.y;
-            modelmat[3 * 4 + 2] = objects[p][i].pos.z;
+            mat_set(modelmat, 3, 0, objects[p][i].pos.x);
+            mat_set(modelmat, 3, 1, objects[p][i].pos.y);
+            mat_set(modelmat, 3, 2, objects[p][i].pos.z);
             glUniformMatrix4fv(modelmatuloc, 1, GL_FALSE, modelmat);
 
             // Draw model

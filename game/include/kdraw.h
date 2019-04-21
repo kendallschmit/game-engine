@@ -6,10 +6,10 @@
 
 #include "vectors.h"
 
-#define VIEW_DIST 10
+#define VIEW_DIST 5
 
-#define FOV_RAD 1.7
-#define NEAR_CLIP 0.5
+#define FOV_RAD 1.5
+#define NEAR_CLIP 0.1
 #define FAR_CLIP 200
 
 #define ORTHO_MIN 5
