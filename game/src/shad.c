@@ -3,53 +3,42 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// Shader literals
-#define MY_VERTEX_SHADER "#version 410\n\
-uniform mat4 projmat;\n\
-uniform mat4 viewmat;\n\
-uniform mat4 modelmat;\n\
-layout (location = 0) in vec3 in_pos;\n\
-layout (location = 1) in vec2 vert_uv;\n\
-out vec2 uv;\n\
-void main(void) {\n\
-    gl_Position = projmat * viewmat * modelmat * vec4(in_pos.xyz, 1.0);\n\
-    uv = vert_uv;\n\
-}\
-"
+#include "kutil.h"
 
-#define MY_FRAGMENT_SHADER "#version 410\n\
-uniform sampler2D tex_sampler;\n\
-in vec2 uv;\n\
-out vec4 out_color;\n\
-void main (void) {\n\
-    out_color = texture(tex_sampler, uv).rgba;\n\
-}\
-"
+// Should make this dynamic or something
+#define SHADER_SOURCE_LEN 4096
 
 GLuint shad_simple_prog = 0;
 
-static GLuint compile_shader(const GLchar * const *source, GLenum shader_type) {
-    printf("--------\n%s\n... ", *source);
+static GLuint load_shader(char *path, GLenum shader_type) {
+    FILE *f = fopen(path, "r");
+    if (f == NULL) {
+        kprint("Unable to open shader file \"%s\"", path);
+        return 0;
+    }
+
+    GLchar source[SHADER_SOURCE_LEN] = { 0 };
+    GLchar *lines = source;
+    const GLchar **lines_ptr = &lines;
+    if (fread(source, sizeof(source[0]), SHADER_SOURCE_LEN, f) == 0) {
+        kprint("Problem reading shader file \"%s\"", path);
+        return 0;
+    }
     GLint success;
-
     GLuint shad = glCreateShader(shader_type);
-    glShaderSource(shad, 1, source, NULL);
+    glShaderSource(shad, 1, lines_ptr, NULL);
     glCompileShader(shad);
-
     glGetShaderiv(shad, GL_COMPILE_STATUS, &success);
     if (success) {
-        printf("compiled\n");
+        kprint("Compiled \"%s\"", path);
     }
     else {
-        printf("failed\n");
+        GLint log_size = 0;
+        glGetShaderiv(shad, GL_INFO_LOG_LENGTH, &log_size);
+        GLchar log[log_size];
+        glGetShaderInfoLog(shad, log_size, NULL, log);
+        kprint("Failed to compile \"%s\": %s", path, log);
     }
-    printf("log:\n");
-    GLint log_size = 0;
-    glGetShaderiv(shad, GL_INFO_LOG_LENGTH, &log_size);
-    GLchar log[log_size];
-    glGetShaderInfoLog(shad, log_size, NULL, log);
-    printf("%s\n--------\n", log);
-
     return shad;
 }
 
@@ -57,18 +46,8 @@ static GLuint fshad = 0;
 static GLuint vshad = 0;
 
 extern void shad_init() {
-    printf("begin shad_init()\n");
-    // Make basic shaders
-    const GLchar *line;
-    const GLchar *const *source;
-
-    line = MY_VERTEX_SHADER;
-    source = &line;
-    vshad = compile_shader(source, GL_VERTEX_SHADER);
-
-    line = MY_FRAGMENT_SHADER;
-    source = &line;
-    fshad = compile_shader(source, GL_FRAGMENT_SHADER);
+    vshad = load_shader("res/shader/simple_vertex.glsl", GL_VERTEX_SHADER);
+    fshad = load_shader("res/shader/simple_fragment.glsl", GL_FRAGMENT_SHADER);
 
     // Make a basic program, attach shaders
     shad_simple_prog = glCreateProgram();
@@ -76,8 +55,6 @@ extern void shad_init() {
     glAttachShader(shad_simple_prog, fshad);
 
     glLinkProgram(shad_simple_prog);
-
-    printf("end shad_init()\n\n");
 }
 
 extern void shad_deinit() {
