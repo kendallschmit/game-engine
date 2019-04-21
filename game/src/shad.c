@@ -16,10 +16,10 @@ static GLuint load_shader(char *path, GLenum shader_type) {
         kprint("Unable to open shader file \"%s\"", path);
         return 0;
     }
-
+    // Simulate the array of lines that glShaderSource expects
     GLchar source[SHADER_SOURCE_LEN] = { 0 };
     GLchar *lines = source;
-    const GLchar **lines_ptr = &lines;
+    const GLchar **lines_ptr = (const GLchar **)&lines;
     if (fread(source, sizeof(source[0]), SHADER_SOURCE_LEN, f) == 0) {
         kprint("Problem reading shader file \"%s\"", path);
         return 0;
