@@ -27,9 +27,8 @@ struct kdraw {
 };
 
 extern void kdraw_init(GLFWwindow *window);
-extern void kdraw_window_adapt(GLFWwindow *window);
-extern void kdraw_draw(GLFWwindow *window);
-extern struct kdraw *kdraw_make_quad(size_t tex, int proj);
-extern size_t kdraw_add_tex(GLfloat *pix);
+extern void kdraw_set_dimensions(int w, int h);
+extern void kdraw_draw();
+extern struct kdraw *kdraw_make_quad(GLuint tex, int proj);
 
 #endif

@@ -42,20 +42,9 @@ int main() {
 
     // Register callbacks
     glfwSetKeyCallback(window, key_callback);
-    glfwMakeContextCurrent(window);
-
-    // Load functions with glad
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
-
-    // Init shad.h
-    shad_init();
 
     // Run the game
-    // It needs the window to swap buffers and get input
     game(window);
-
-    // Deinit shad.h
-    shad_deinit();
 
     // Cleanup GLFW
     glfwDestroyWindow(window);

@@ -5,6 +5,9 @@ game/src/game.c \
 game/src/kdraw.c \
 game/src/ktex.c \
 game/src/kinput.c \
+game/src/kthread.c \
+game/src/krender.c \
+game/src/kengine.c \
 game/src/ktiming.c
 
 $(BUILD)game/%.o: CFLAGS += -pedantic -Werror

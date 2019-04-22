@@ -58,7 +58,7 @@ static void gen_projmat(GLfloat *mat, GLfloat angle, GLfloat ratio,
 }
 
 static void window_size_callback(GLFWwindow *window, int x, int y) {
-    kdraw_window_adapt(window);
+    kdraw_set_dimensions(x, y);
 }
 
 static void generate_quad_vao() {
@@ -127,12 +127,9 @@ extern void kdraw_init(GLFWwindow *window)
     glUniformMatrix4fv(viewmatuloc, 1, GL_FALSE, viewmat);
 
     // Need to adapt to the aspect ration when we start
-    kdraw_window_adapt(window);
 }
 
-extern void kdraw_window_adapt(GLFWwindow *window) {
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
+extern void kdraw_set_dimensions(int w, int h) {
     GLfloat ratio = (GLfloat)w / h;
 
     // Projection matrix (perspective)
@@ -154,7 +151,7 @@ extern void kdraw_window_adapt(GLFWwindow *window) {
     }
 }
 
-extern void kdraw_draw(GLFWwindow *window)
+extern void kdraw_draw()
 {
     glClear(GL_COLOR_BUFFER_BIT
             | GL_DEPTH_BUFFER_BIT
@@ -183,7 +180,7 @@ extern void kdraw_draw(GLFWwindow *window)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-extern struct kdraw *kdraw_make_quad(size_t tex, int proj)
+extern struct kdraw *kdraw_make_quad(GLuint tex, int proj)
 {
     // TRACK VAO
     objects[proj][nobjects[proj]] = (struct kdraw) {
