@@ -4,6 +4,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-void game(GLFWwindow *window);
+extern void game(GLFWwindow *window);
 
 #endif

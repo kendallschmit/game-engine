@@ -23,24 +23,24 @@ struct kobj {
     struct vec3 vel;
 };
 
-void game(GLFWwindow *window) {
+extern void game(GLFWwindow *window) {
     srand(time(NULL));
 
     GLuint tex_akko = ktex_load("res/tga/akko.tga");
-    GLuint tex_ritsu = ktex_load("res/tga/ritsu.tga");
+    GLuint tex_ritsu = ktex_load("res/tga/ritsu128.tga");
 
     kdraw_init(window);
 
-    struct kobj enemies[100] = { 0 };
+    struct kobj enemies[10000] = { 0 };
     for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); i++) {
         enemies[i].kdraw = kdraw_make_quad(tex_ritsu, KDRAW_PROJ_PERSP);
         enemies[i].kdraw->pos = (struct vec3) {
-            randf(-1, 1),
-            randf(-1, 1),
-            randf(-50, 0),
+            randf(-400, 400),
+            randf(-400, 400),
+            randf(-400, 0),
         };
         //enemies[i].vel.x = randf(-0.001, 0.001);
-        enemies[i].vel.z = 0.015;
+        enemies[i].vel.z = 0.05;
     }
 
     struct kobj player = { 0 };
@@ -53,6 +53,8 @@ void game(GLFWwindow *window) {
             enemies[i].kdraw->pos.x += enemies[i].vel.x;
             enemies[i].kdraw->pos.y += enemies[i].vel.y;
             enemies[i].kdraw->pos.z += enemies[i].vel.z;
+            if (enemies[i].kdraw->pos.z > 10)
+                enemies[i].kdraw->pos.z = -200;
         }
         kdraw_draw(window);
         glfwPollEvents();

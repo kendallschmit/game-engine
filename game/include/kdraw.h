@@ -10,10 +10,10 @@
 
 #define FOV_RAD 1.5
 #define NEAR_CLIP 0.1
-#define FAR_CLIP 200.0
+#define FAR_CLIP 400.0
 
 #define ORTHO_WIDTH 4.5
-#define ORTHO_DEPTH 200.0
+#define ORTHO_DEPTH 400.0
 
 #define KDRAW_PROJ_START 0
 #define KDRAW_PROJ_ORTHO 0

@@ -6,7 +6,13 @@
 #include "kutil.h"
 #include "shad.h"
 
-#define OBJ_MAX 1000
+#define OBJ_MAX 100000
+
+// vaos
+#define VAO_QUAD 0
+#define VAO_MAX 1
+static GLuint vaos[VAO_MAX];
+
 // kdraw objects
 static size_t nobjects[KDRAW_PROJ_MAX];
 static struct kdraw objects[KDRAW_PROJ_MAX][OBJ_MAX];
@@ -55,9 +61,58 @@ static void window_size_callback(GLFWwindow *window, int x, int y) {
     kdraw_window_adapt(window);
 }
 
+static void generate_quad_vao() {
+    GLuint vao; // Name of VAO
+    glGenVertexArrays(1, &vao); // Generate one VAO
+    glBindVertexArray(vao); // Make it active VAO
+
+    /* lower left quad
+    GLfloat quad_buf[] = {
+        0.0, 0.0, 0.0,   0.0, 1.0,   // BL
+        1.0, 0.0, 0.0,   1.0, 1.0,   // BR
+        0.0, 1.0, 0.0,   0.0, 0.0,   // TL
+
+        1.0, 1.0, 0.0,   1.0, 0.0,   // TR
+        0.0, 1.0, 0.0,   0.0, 0.0,   // TL
+        1.0, 0.0, 0.0,   1.0, 1.0,   // BR
+    }; */
+    GLfloat quad_buf[] = {
+        -0.5, -0.5, -0.5,   0.0, 1.0,   // BL
+         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
+        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
+         0.5,  0.5, -0.5,   1.0, 0.0,   // TR
+        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
+         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
+    };
+
+    // VERTEX BUFFER
+    GLuint buf; // Name of vertex buffer
+    glGenBuffers(1, &buf); // Generate buffer
+    glBindBuffer(GL_ARRAY_BUFFER, buf); // Make it the active ARRAY_BUFFER
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_buf), quad_buf, GL_STATIC_DRAW);
+    // Set x, y positions for tris
+    // index, size, type, normalized, stride, offset
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE,
+            sizeof(GLfloat) * 5, 0);
+    glEnableVertexAttribArray(0); // Enable VA at index 0
+    // Set uv positions for tris
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+            sizeof(GLfloat) * 5, (GLvoid *)(sizeof(GLfloat) * 3));
+    glEnableVertexAttribArray(1); // Enable VA at index 1
+
+    // DONE MAKING CHANGES
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    // Store it
+    vaos[VAO_QUAD] = vao;
+}
+
 // Extern
 extern void kdraw_init(GLFWwindow *window)
 {
+    // Generate VAOs
+    generate_quad_vao();
+
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     glUseProgram(shad_simple_prog);
@@ -132,52 +187,9 @@ extern void kdraw_draw(GLFWwindow *window)
 
 extern struct kdraw *kdraw_make_quad(size_t tex, int proj)
 {
-    // VAO
-    GLuint vao; // Name of VAO
-    glGenVertexArrays(1, &vao); // Generate one VAO
-    glBindVertexArray(vao); // Make it active VAO
-
-    /* lower left quad
-    GLfloat quad_buf[] = {
-        0.0, 0.0, 0.0,   0.0, 1.0,   // BL
-        1.0, 0.0, 0.0,   1.0, 1.0,   // BR
-        0.0, 1.0, 0.0,   0.0, 0.0,   // TL
-
-        1.0, 1.0, 0.0,   1.0, 0.0,   // TR
-        0.0, 1.0, 0.0,   0.0, 0.0,   // TL
-        1.0, 0.0, 0.0,   1.0, 1.0,   // BR
-    }; */
-    GLfloat quad_buf[] = {
-        -0.5, -0.5, -0.5,   0.0, 1.0,   // BL
-         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
-        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
-         0.5,  0.5, -0.5,   1.0, 0.0,   // TR
-        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
-         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
-    };
-
-    // VERTEX BUFFER
-    GLuint buf; // Name of vertex buffer
-    glGenBuffers(1, &buf); // Generate buffer
-    glBindBuffer(GL_ARRAY_BUFFER, buf); // Make it the active ARRAY_BUFFER
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_buf), quad_buf, GL_STATIC_DRAW);
-    // Set x, y positions for tris
-    // index, size, type, normalized, stride, offset
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE,
-            sizeof(GLfloat) * 5, 0);
-    glEnableVertexAttribArray(0); // Enable VA at index 0
-    // Set uv positions for tris
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-            sizeof(GLfloat) * 5, (GLvoid *)(sizeof(GLfloat) * 3));
-    glEnableVertexAttribArray(1); // Enable VA at index 1
-
-    // DONE MAKING CHANGES
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
     // TRACK VAO
     objects[proj][nobjects[proj]] = (struct kdraw) {
-        .vao = vao,
+        .vao = vaos[VAO_QUAD],
         .tex = tex,
     };
     return &objects[proj][nobjects[proj]++];
