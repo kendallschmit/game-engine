@@ -4,6 +4,7 @@ game/src/shad.c \
 game/src/game.c \
 game/src/kdraw.c \
 game/src/ktex.c \
+game/src/kinput.c
 $(BUILD)game/%.o: CFLAGS += -pedantic -Werror
 
 # game binary
