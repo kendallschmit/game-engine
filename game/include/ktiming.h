@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #define KTIMING_INPUT 0
 #define KTIMING_FRAME 1
 
@@ -15,6 +18,6 @@ struct ktiming_timer {
 };
 
 extern void ktiming_starttimer(struct ktiming_timer *timer);
-extern double ktiming_endtimer(struct ktiming_timer *timer);
+extern uint64_t ktiming_endtimer(struct ktiming_timer *timer);
 
 #endif

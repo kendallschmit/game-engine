@@ -181,8 +181,6 @@ extern void kdraw_draw(GLFWwindow *window)
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    glfwSwapBuffers(window);
 }
 
 extern struct kdraw *kdraw_make_quad(size_t tex, int proj)

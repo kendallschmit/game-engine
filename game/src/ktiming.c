@@ -80,7 +80,7 @@ extern void ktiming_starttimer(struct ktiming_timer *timer) {
     }
 }
 
-extern double ktiming_endtimer(struct ktiming_timer *timer) {
+extern uint64_t ktiming_endtimer(struct ktiming_timer *timer) {
     struct timespec current;
     if (clock_gettime(CLOCK_MONOTONIC, &current) == -1) {
         kprint("Error reading monotonic clock: %s", strerror(errno));
@@ -88,5 +88,5 @@ extern double ktiming_endtimer(struct ktiming_timer *timer) {
     struct timespec duration = current;
     tssub(&duration, &timer->start);
     timer->start = current;
-    return (double)duration.tv_sec + (double)duration.tv_nsec / BILLION;
+    return duration.tv_sec * BILLION + duration.tv_nsec;
 }
