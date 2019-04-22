@@ -1,16 +1,17 @@
-SRC += game/src/main.c \
-game/src/kutil.c \
-game/src/shad.c \
-game/src/game.c \
-game/src/kdraw.c \
-game/src/ktex.c \
-game/src/kinput.c \
-game/src/kthread.c \
-game/src/krender.c \
-game/src/kengine.c \
-game/src/ktiming.c
+SRC += \
+game/src/main.c \
+game/src/engine.c \
+game/src/kge_util.c \
+game/src/kge_thread.c \
+game/src/kge_timer.c \
+game/src/shader.c \
+game/src/texture.c \
+game/src/vao.c \
+game/src/draw.c
 
 $(BUILD)game/%.o: CFLAGS += -pedantic -Werror
+
+game: $(patsubst %.c,$(BUILD)%.o,$(filter %.c,$(SRC)))
 
 # game binary
 .SECONDEXPANSION:

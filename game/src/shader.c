@@ -1,14 +1,11 @@
-#include "shad.h"
+#include "shader.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "kutil.h"
+#include "kge_util.h"
 
 // Should make this dynamic or something
 #define SHADER_SOURCE_LEN 4096
 
-GLuint shad_simple_prog = 0;
+GLuint shader_program_simple = 0;
 
 static GLuint load_shader(char *path, GLenum shader_type) {
     FILE *f = fopen(path, "r");
@@ -45,23 +42,23 @@ static GLuint load_shader(char *path, GLenum shader_type) {
 static GLuint fshad = 0;
 static GLuint vshad = 0;
 
-extern void shad_init() {
+extern void shader_init() {
     vshad = load_shader("res/shader/simple_vertex.glsl", GL_VERTEX_SHADER);
     fshad = load_shader("res/shader/simple_fragment.glsl", GL_FRAGMENT_SHADER);
 
     // Make a basic program, attach shaders
-    shad_simple_prog = glCreateProgram();
-    glAttachShader(shad_simple_prog, vshad);
-    glAttachShader(shad_simple_prog, fshad);
+    shader_program_simple = glCreateProgram();
+    glAttachShader(shader_program_simple, vshad);
+    glAttachShader(shader_program_simple, fshad);
 
-    glLinkProgram(shad_simple_prog);
+    glLinkProgram(shader_program_simple);
 }
 
-extern void shad_deinit() {
+extern void shader_deinit() {
     glDeleteShader(vshad);
     glDeleteShader(fshad);
 
-    glDetachShader(shad_simple_prog, vshad);
-    glDetachShader(shad_simple_prog, fshad);
-    glDeleteProgram(shad_simple_prog);
+    glDetachShader(shader_program_simple, vshad);
+    glDetachShader(shader_program_simple, fshad);
+    glDeleteProgram(shader_program_simple);
 }

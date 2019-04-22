@@ -1,22 +1,13 @@
-#include "ktiming.h"
+#include "kge_timer.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <inttypes.h>
 
-#include "kutil.h"
-
-#define MAX_FRAMERATE 240
+#include "kge_util.h"
 
 #define BILLION 1000000000
-
-static struct timespec last_frame_time;
-static struct timespec next_frame_time;
-static struct timespec frame_time = {
-    .tv_sec = 0,
-    .tv_nsec = BILLION / MAX_FRAMERATE,
-};
 
 static int tscmp(struct timespec *a, struct timespec *b)
 {
@@ -51,36 +42,39 @@ static void tssub(struct timespec *a, struct timespec *b)
     a->tv_nsec -= b->tv_nsec;
 }
 
-extern void ktiming_frame_started() {
-    if (clock_gettime(CLOCK_MONOTONIC, &last_frame_time) == -1) {
-        kprint("Error reading monotonic clock: %s", strerror(errno));
-    }
-    next_frame_time = last_frame_time;
-    tsadd(&next_frame_time, &frame_time);
-}
-
-extern void ktiming_wait()
+extern void kge_timer_wait(struct kge_timer *timer, uint64_t ns)
 {
-    // Current time
     struct timespec current;
     if (clock_gettime(CLOCK_MONOTONIC, &current) == -1) {
         kprint("Error reading monotonic clock: %s", strerror(errno));
     }
-    // Sleep if we would exceed framerate limit
-    if (tscmp(&current, &next_frame_time) <= 0) {
-        struct timespec duration = next_frame_time;
-        tssub(&duration, &current);
-        nanosleep(&duration, NULL);
+    struct timespec complete_time = { ns / BILLION, ns % BILLION };
+    tsadd(&complete_time, &timer->start);
+    timer->start = complete_time; // Start the timer here for next time
+    if (tscmp(&complete_time, &current) <= 0) {
+        kprint("Time passed, return immediately");
+        return;
     }
+    tssub(&complete_time, &current); // Get time until complete time
+    nanosleep(&complete_time, NULL); // Sleep that long
 }
 
-extern void ktiming_starttimer(struct ktiming_timer *timer) {
+extern void kge_timer_start(struct kge_timer *timer) {
     if (clock_gettime(CLOCK_MONOTONIC, &timer->start) == -1) {
         kprint("Error reading monotonic clock: %s", strerror(errno));
     }
 }
 
-extern uint64_t ktiming_endtimer(struct ktiming_timer *timer) {
+extern uint64_t kge_timer_interval(struct kge_timer *timer) {
+    struct timespec current;
+    if (clock_gettime(CLOCK_MONOTONIC, &current) == -1) {
+        kprint("Error reading monotonic clock: %s", strerror(errno));
+    }
+    tssub(&current, &timer->start);
+    return current.tv_sec * BILLION + current.tv_nsec;
+}
+
+extern uint64_t kge_timer_reset(struct kge_timer *timer) {
     struct timespec current;
     if (clock_gettime(CLOCK_MONOTONIC, &current) == -1) {
         kprint("Error reading monotonic clock: %s", strerror(errno));

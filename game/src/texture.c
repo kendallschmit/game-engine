@@ -1,13 +1,13 @@
-#include "ktex.h"
+#include "texture.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "kutil.h"
+#include "kge_util.h"
 
 // Textures
-extern GLuint ktex_load(char *path)
+extern GLuint texture_load(char *path)
 {
     FILE *f = fopen(path, "r");
     if (f == NULL) {

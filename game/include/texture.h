@@ -2,8 +2,7 @@
 #define KTEX_H
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-extern GLuint ktex_load(char *path);
+extern GLuint texture_load(char *path);
 
 #endif

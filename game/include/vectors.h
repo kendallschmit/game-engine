@@ -2,7 +2,6 @@
 #define VECTORS_H
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 struct vec2 {
     GLfloat x, y;
