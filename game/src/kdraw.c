@@ -51,9 +51,15 @@ static void gen_projmat(GLfloat *mat, GLfloat angle, GLfloat ratio,
     mat_set(mat, 3, 2, -(2 * far * near) / (far - near));
 }
 
+static void window_size_callback(GLFWwindow *window, int x, int y) {
+    kdraw_window_adapt(window);
+}
+
 // Extern
 extern void kdraw_init(GLFWwindow *window)
 {
+    glfwSetWindowSizeCallback(window, window_size_callback);
+
     glUseProgram(shad_simple_prog);
     modelmatuloc = glGetUniformLocation(shad_simple_prog, "modelmat");
     viewmatuloc = glGetUniformLocation(shad_simple_prog, "viewmat");
