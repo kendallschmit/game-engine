@@ -131,6 +131,7 @@ extern struct kdraw *kdraw_make_quad(size_t tex, int proj)
     glGenVertexArrays(1, &vao); // Generate one VAO
     glBindVertexArray(vao); // Make it active VAO
 
+    /* lower left quad
     GLfloat quad_buf[] = {
         0.0, 0.0, 0.0,   0.0, 1.0,   // BL
         1.0, 0.0, 0.0,   1.0, 1.0,   // BR
@@ -139,6 +140,14 @@ extern struct kdraw *kdraw_make_quad(size_t tex, int proj)
         1.0, 1.0, 0.0,   1.0, 0.0,   // TR
         0.0, 1.0, 0.0,   0.0, 0.0,   // TL
         1.0, 0.0, 0.0,   1.0, 1.0,   // BR
+    }; */
+    GLfloat quad_buf[] = {
+        -0.5, -0.5, -0.5,   0.0, 1.0,   // BL
+         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
+        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
+         0.5,  0.5, -0.5,   1.0, 0.0,   // TR
+        -0.5,  0.5, -0.5,   0.0, 0.0,   // TL
+         0.5, -0.5, -0.5,   1.0, 1.0,   // BR
     };
 
     // VERTEX BUFFER
