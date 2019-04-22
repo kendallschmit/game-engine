@@ -82,14 +82,14 @@ extern void kdraw_window_adapt(GLFWwindow *window) {
     // Projection matrix (orthographic)
     memcpy(projmats[KDRAW_PROJ_ORTHO], identity4, sizeof(identity4));
     if (w > h) {
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 0, 0, 1 / (GLfloat)w / h / ORTHO_MIN);
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 1, 1, 1 / ORTHO_MIN);
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 2, 2, 1 / ratio / 6.0);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 0, 0, (1 / ORTHO_WIDTH) * h / w);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 1, 1, 1 / ORTHO_WIDTH);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 2, 2, 1 / ORTHO_DEPTH);
     }
     else {
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 0, 0, 1 / (GLfloat)w / h / ORTHO_MIN);
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 1, 1, 1 / ORTHO_MIN);
-        mat_set(projmats[KDRAW_PROJ_ORTHO], 2, 2, 1 / ratio / 6.0);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 0, 0, 1 / ORTHO_WIDTH);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 1, 1, (1 / ORTHO_WIDTH) * w / h);
+        mat_set(projmats[KDRAW_PROJ_ORTHO], 2, 2, 1 / ORTHO_DEPTH);
     }
 }
 
