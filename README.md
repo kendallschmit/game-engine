@@ -1,4 +1,4 @@
-#kge
+# kge
 
 A game/game engine project I have been working on tentatively titled `kge`
 (Kenny Game Engine). Written in C11 and only tested on MacOS so far. It not very
