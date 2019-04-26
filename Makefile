@@ -10,8 +10,8 @@ BUILD=build/
 BIN=bin/
 
 # macOS
-CFLAGS += -I /usr/local/include
-LDFLAGS += -L /usr/local/lib
+CFLAGS += -I/usr/local/include
+LDFLAGS += -L/usr/local/lib
 
 # list of modules to build
 MODULES := glad game

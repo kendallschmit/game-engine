@@ -1,6 +1,7 @@
 SRC += \
 game/src/main.c \
 game/src/engine.c \
+game/src/input.c \
 game/src/kge_util.c \
 game/src/kge_thread.c \
 game/src/kge_timer.c \
@@ -11,7 +12,7 @@ game/src/draw.c
 
 $(BUILD)game/%.o: CFLAGS += -pedantic -Werror
 
-game: $(patsubst %.c,$(BUILD)%.o,$(filter %.c,$(SRC)))
+$(BIN)game: $(patsubst %.c,$(BUILD)%.o,$(filter %.c,$(SRC)))
 
 # game binary
 .SECONDEXPANSION:
@@ -26,3 +27,5 @@ $(BIN)game: LDFLAGS +=\
     -framework OpenGL\
     -framework IOKit\
     -framework CoreVideo
+
+game: $(BIN)game

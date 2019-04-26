@@ -143,8 +143,10 @@ extern void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
         mat_set(model_matrix, 3, 2, d->pos.z);
         glUniformMatrix4fv(model_matrix_location, 1, GL_FALSE, model_matrix);
         // Draw
-        glBindVertexArray(d->vao);
-        glBindTexture(GL_TEXTURE_2D, d->tex);
+        if (!same_vao || i == 0)
+            glBindVertexArray(d->vao);
+        if (!same_tex || i == 0)
+            glBindTexture(GL_TEXTURE_2D, d->tex);
         glDrawArrays(GL_TRIANGLES, 0, 6); // TODO Not always 6
     }
     // Unbind everything to clean up

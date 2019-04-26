@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "input.h"
 #include "kge_util.h"
 #include "kge_timer.h"
 #include "kge_thread.h"
@@ -22,24 +23,43 @@
 #define MILLIS 1000
 #define SCALE MICROS
 
-// Engine stuff
-struct input_set {
-    bool up;
-    bool down;
-    bool left;
-    bool right;
+// Dealing with objects
+#define OBJECTS_MAX 100000
+struct object_group {
+    struct draw draws[OBJECTS_MAX];
+    struct kge_obj objs[OBJECTS_MAX];
+    GLuint count;
+    struct timespec prev_tick_time;
 };
-struct input_set input = { 0 };
 
-#define OBJECTS_MAX 10000
-static GLuint northo_objs = 0;
-struct draw ortho_draws[OBJECTS_MAX] = { 0 };
-static struct kge_obj ortho_objs[OBJECTS_MAX] = { 0 };
+struct object_group background_objs;
+struct object_group foreground_objs;
 
-static GLuint npersp_objs = 0;
-struct draw persp_draws[OBJECTS_MAX] = { 0 };
-static struct kge_obj persp_objs[OBJECTS_MAX] = { 0 };
+static void physics_update(struct object_group *group, uint64_t nanos)
+{
+    uint64_t deltatime = nanos / (NANOS / SCALE);
+    // Physics (all integers)
+    for (GLuint i = 0; i < group->count; i++) {
+        struct kge_obj *o = &group->objs[i];
+        o->pos.x += o->vel.x * deltatime;
+        o->pos.y += o->vel.y * deltatime;
+        o->pos.z += o->vel.z * deltatime;
 
+        while (o->pos.z > 10 * SCALE) {
+            o->pos.z -= 1010 * SCALE;
+        }
+    }
+}
+
+static void render_update(struct object_group *group)
+{
+    for (GLuint i = 0; i < group->count; i++) {
+        struct kge_obj *o = &group->objs[i];
+        o->draw->pos.x = (GLfloat)o->pos.x / SCALE;
+        o->draw->pos.y = (GLfloat)o->pos.y / SCALE;
+        o->draw->pos.z = (GLfloat)o->pos.z / SCALE;
+    }
+}
 
 static GLuint tex_akko;
 static GLuint tex_ritsu;
@@ -50,38 +70,6 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode,
-        int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        return;
-    }
-    bool *val;
-    switch (key) {
-        case GLFW_KEY_UP:
-            val = &input.up;
-            break;
-        case GLFW_KEY_DOWN:
-            val = &input.down;
-            break;
-        case GLFW_KEY_LEFT:
-            val = &input.left;
-            break;
-        case GLFW_KEY_RIGHT:
-            val = &input.right;
-            break;
-        default:
-            return;
-    }
-    if (action == GLFW_PRESS) {
-        *val = true;
-    }
-    else if (action == GLFW_RELEASE) {
-        *val = false;
-    }
-}
-
 static void main_thread(GLFWwindow *window, struct kge_thread *render_thread)
 {
     // Set up game
@@ -90,41 +78,42 @@ static void main_thread(GLFWwindow *window, struct kge_thread *render_thread)
     kge_thread_lock(render_thread); // Lock render thread during init
     // Only orthographic object is player for now
     kprint("Set up player");
-    struct kge_obj *player = &ortho_objs[0];
-    player->draw = &ortho_draws[0];
+    struct kge_obj *player = &foreground_objs.objs[0];
+    player->draw = &foreground_objs.draws[0];
     *player->draw = (struct draw){
         .vao = vaos[VAO_QUAD],
         .tex = tex_akko,
     };
-    northo_objs = 1;
+    foreground_objs.count = 1;
 
     // Ritsus are all perspective
     kprint("Set up ritsus");
-    GLuint nritsus = 5000;
+    GLuint nritsus = 10000;
     for (GLuint i = 0; i < nritsus; i++) {
-        persp_objs[i].draw = &persp_draws[i];
-        *persp_objs[i].draw = (struct draw){
+        struct kge_obj *o = &background_objs.objs[i];
+        o->draw = &background_objs.draws[i];
+        *o->draw = (struct draw){
             .vao = vaos[VAO_QUAD],
             .tex = tex_ritsu,
         };
-        persp_objs[i].pos = (struct vec3i) {
+        o->pos = (struct vec3i) {
             randi(-1000 * SCALE, 1000 * SCALE),
             randi(-1000 * SCALE, 1000 * SCALE),
             randi(-1000 * SCALE, 10 * SCALE),
         };
-        persp_objs[i].vel.z = 80;
-        //persp_objs[i].vel.y = 80;
+        o->vel.z = 80;
+        //o->vel.y = 80;
     }
-    npersp_objs = nritsus;
+    background_objs.count = nritsus;
     kge_thread_unlock(render_thread); // Render thread is safe to go
 
     // Loop
-    struct kge_timer input_timer;
-    kge_timer_start(&input_timer);
     while (!glfwWindowShouldClose(window)) {
-        kge_thread_lock(render_thread);
         // Input
         glfwPollEvents();
+        kge_thread_lock(render_thread);
+
+        // Apply velocity to player
         player->vel = (struct vec3i){ 0, 0, 0 };
         if (input.up)
             player->vel.y = 3;
@@ -135,17 +124,16 @@ static void main_thread(GLFWwindow *window, struct kge_thread *render_thread)
         if (input.right)
             player->vel.x = 3;
 
-        // Physics (all integers)
-        uint64_t phys_time = kge_timer_reset(&input_timer) / (NANOS / SCALE);
-        for (int i = 0; i < northo_objs; i++) {
-            ortho_objs[i].pos.x += ortho_objs[i].vel.x * phys_time;
-            ortho_objs[i].pos.y += ortho_objs[i].vel.y * phys_time;
-            ortho_objs[i].pos.z += ortho_objs[i].vel.z * phys_time;
-        }
+        // Physics update
+        struct timespec now;
+        kge_timer_now(&now);
+        physics_update(&foreground_objs,
+                kge_timer_nanos_diff(&now, &foreground_objs.prev_tick_time));
+        foreground_objs.prev_tick_time = now;
+
         kge_thread_unlock(render_thread);
 
-        //kprint("Time between inputs %08.04fms", (double)phys_time / 1000);
-        struct timespec ts = { 0, 4 * (NANOS / MILLIS) };
+        struct timespec ts = { 0, 1 * (NANOS / MILLIS) };
         nanosleep(&ts, NULL);
     }
 }
@@ -188,50 +176,53 @@ static void *render_thread_fn(void *thread_arg)
     kge_thread_signal_init(thread);
 
     // Main render loop
-    struct kge_timer render_timer;
-    kge_timer_start(&render_timer);
     while (!thread->terminated) {
-        // Physics for perspective objects
-        uint64_t phys_time = kge_timer_reset(&render_timer) / (NANOS / SCALE);
-        for (int i = 0; i < npersp_objs; i++) {
-            persp_objs[i].pos.x += persp_objs[i].vel.x * phys_time;
-            persp_objs[i].pos.y += persp_objs[i].vel.y * phys_time;
-            persp_objs[i].pos.z += persp_objs[i].vel.z * phys_time;
-            if (persp_objs[i].pos.z > 10 * SCALE)
-                persp_objs[i].pos.z -= 1010 * SCALE;
-            if (persp_objs[i].pos.y > 1000 * SCALE)
-                persp_objs[i].pos.y -= 2000 * SCALE;
-        }
+        //struct timespec ts = { 0, 8 * (NANOS / MILLIS) };
+        //nanosleep(&ts, NULL);
 
-        // Calculate kdraw values
+        struct timespec renderstart;
+        kge_timer_now(&renderstart);
+        // Calculate object positions
         kge_thread_lock(thread);
-        for (GLuint i = 0; i < npersp_objs; i++) {
-            struct kge_obj *e = &persp_objs[i];
-            e->draw->pos.x = (GLfloat)e->pos.x / SCALE;
-            e->draw->pos.y = (GLfloat)e->pos.y / SCALE;
-            e->draw->pos.z = (GLfloat)e->pos.z / SCALE;
-        }
-        for (GLuint i = 0; i < northo_objs; i++) {
-            struct kge_obj *e = &ortho_objs[i];
-            e->draw->pos.x = (GLfloat)e->pos.x / SCALE;
-            e->draw->pos.y = (GLfloat)e->pos.y / SCALE;
-            e->draw->pos.z = (GLfloat)e->pos.z / SCALE;
-        }
+
+        // Physics and timing
+        struct timespec now;
+        kge_timer_now(&now);
+        physics_update(&background_objs,
+                kge_timer_nanos_diff(&now, &background_objs.prev_tick_time));
+        physics_update(&foreground_objs,
+                kge_timer_nanos_diff(&now, &foreground_objs.prev_tick_time));
+        background_objs.prev_tick_time = now;
+        foreground_objs.prev_tick_time = now;
+
+        // Render
+        render_update(&background_objs);
+        render_update(&foreground_objs);
+
         kge_thread_unlock(thread);
 
         // Draw and swap
+        struct timespec drawstart;
+        kge_timer_now(&drawstart);
+
         glClear(GL_COLOR_BUFFER_BIT
                 | GL_DEPTH_BUFFER_BIT
                 | GL_ACCUM_BUFFER_BIT
                 | GL_STENCIL_BUFFER_BIT);
-        draw_list(persp_draws, npersp_objs, PROJECTION_PERSPECTIVE,
-                false, false);
-        draw_list(ortho_draws, northo_objs, PROJECTION_ORTHOGRAPHIC,
-                false, false);
+        draw_list(background_objs.draws, background_objs.count,
+                PROJECTION_PERSPECTIVE, true, true);
+        draw_list(foreground_objs.draws, foreground_objs.count,
+                PROJECTION_ORTHOGRAPHIC, true, true);
+
+        struct timespec renderend;
+        kge_timer_now(&renderend);
+        kprint("%08.04fms (total), %08.04fms(draw),",
+                (double)kge_timer_nanos_diff(&renderend, &renderstart)
+                / NANOS * 1000,
+                (double)kge_timer_nanos_diff(&renderend, &drawstart)
+                / NANOS * 1000);
+
         glfwSwapBuffers(args->window);
-        uint64_t render_time = kge_timer_interval(&render_timer);
-        //kprint("Render time %08.04fms",
-        //        (double)render_time / (NANOS / MILLIS));
     }
     // Deinit engine stuff
     shader_deinit();
@@ -259,13 +250,15 @@ extern int engine_go()
         return -1;
     }
     // Register key-press callback
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, input_key_callback);
 
     // Start render thread
     struct render_thread_args render_thread_args = { .window = window };
     struct kge_thread render_thread = { .arg = &render_thread_args };
     if (kge_thread_start(&render_thread, "/renderer", render_thread_fn) != 0) {
         kprint("Unable to start render thread");
+        glfwDestroyWindow(window);
+        glfwTerminate();
         return -1;
     }
     kprint("Waiting for render thread to initialize");
