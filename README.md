@@ -14,7 +14,9 @@ specific things I hope this engine can do:
 
 ## Stuff I am trying (or plan to try)
 
-I doubt any of this is really
+I doubt any of these ideas are brand new or cutting-edge, but they are the
+things that interest me. I plan on either implementing them or learning why I
+don't see them very often/ever in other projects.  
 
 ### Late rendering with vsync
 
