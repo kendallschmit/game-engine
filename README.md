@@ -42,4 +42,4 @@ inputs hundreds of times per second.
 As long as nothing accelerates and collisions are kept really, really simple, it
 might not be impossible to predict the next collision and make that time the
 next physics step. Player inputs and screen renders would cause an instant
-update. Something could enable determinism at variable frame rates.
+update. Something like this could enable determinism at variable frame rates.
