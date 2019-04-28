@@ -1,41 +1,59 @@
-.SUFFIXES:
+# Directories
+builddir=build
+libdir=lib
+bindir=bin
 
-# compiler stuff
-CC=gcc-8
+# Compiler stuff
+CC = gcc-8
 CFLAGS += -O2 -std=c11
-LDFLAGS += -lm
-
-# directories
-BUILD=build/
-BIN=bin/
+CFLAGS += $(includedirs:%=-I%)
+LDFLAGS += -L$(libdir)
+LDLIBS += -lm
+OUTPUT_OPTION += -MMD
 
 # macOS
 CFLAGS += -I/usr/local/include
-LDFLAGS += -L/usr/local/lib
+LDLIBS += -L/usr/local/lib
 
-# list of modules to build
-MODULES := glad game
+# Default to build all
+all:
 
-# add <module>/include to CFLAGS
-CFLAGS += $(patsubst %,-I%/include, $(MODULES))
+# Libraries to build and dirs to include for them
+static_libraries :=
+includedirs :=
+# Programs to build
+programs :=
 
-# load modules .mk and let them add to SRC
-SRC :=
-include $(patsubst %, %/module.mk,$(MODULES))
+# Functions for defining programs/libs
+include modules.mk
 
-# make OBJ list from SRC, prefix with BUILD
-OBJ := $(patsubst %.c,$(BUILD)%.o,$(filter %.c,$(SRC)))
+# List of modules (must have a ./<module>/module.mk)
+modules := glad game
 
-# mkdir, build .o, build .d
-$(BUILD)%.o: %.c
-	@mkdir -p $(@D)
-	$(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
-	./depend.sh $(dir $<) $(BUILD) $< $(CPPFLAGS) $(CFLAGS) > $(patsubst %.o,%.d,$@)
+# Include modules, make obj and dep
+obj :=
+include $(modules:%=%/module.mk)
+dep := $(obj:.o=.d)
+-include $(dep)
 
-# include the C include dependencies
--include $(OBJ:.o=.d)
+all: $(static_libraries) $(programs)
 
-# clean build and bin files
+# Build rules for .o
+$(builddir)/%.o: %.c
+	mkdir -p $(@D)
+	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(OUTPUT_OPTION)
+
+# Build rules for binaries
+$(programs):
+	mkdir -p $(@D)
+	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+
+# Build rules for libraries
+$(static_libraries):
+	mkdir -p $(@D)
+	$(AR) r $@ $(filter %.o, $^)
+
+# Clean build and bin files
 .PHONY: clean
 clean:
-	-rm -Rf ./$(BUILD)* ./$(BIN)*
+	-$(RM) -rf ./$(builddir) ./$(libdir) ./$(bindir)
