@@ -4,7 +4,7 @@ libdir=lib
 bindir=bin
 
 # Compiler stuff
-CC = gcc-8
+CC = gcc-9
 CFLAGS += -O2 -std=c11
 CFLAGS += $(libinclude)
 LDFLAGS += -L$(libdir)

@@ -5,6 +5,7 @@
 
 #include "shader.h"
 #include "kge_util.h"
+#include "kge_timer.h"
 
 #define OBJ_MAX 100000
 
@@ -118,6 +119,9 @@ extern void draw_set_dimensions(GLuint w, GLuint h)
 extern void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
         bool same_vao, bool same_tex)
 {
+    struct timespec projectionstart;
+    kge_timer_now(&projectionstart);
+
     // Set projection matrix
     GLfloat *proj_matrix = identity4;
     switch (projection) {
@@ -132,6 +136,9 @@ extern void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
             return;
     }
     glUniformMatrix4fv(proj_matrix_location, 1, GL_FALSE, proj_matrix);
+
+    struct timespec modelsstart;
+    kge_timer_now(&modelsstart);
 
     GLfloat model_matrix[16];
     memcpy(model_matrix, identity4, sizeof(identity4));
@@ -152,4 +159,23 @@ extern void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
     // Unbind everything to clean up
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    struct timespec end;
+    kge_timer_now(&end);
+
+    if (projection == PROJECTION_ORTHOGRAPHIC)
+        return;
+    //printf("total,projection,models,modelave");
+    //printf("total,%08.04f\n",
+    //        (double)kge_timer_nanos_diff(&end, &projectionstart)
+    //        / 1000000.0);
+    //printf("projection,%08.04f\n",
+    //        (double)kge_timer_nanos_diff(&modelsstart, &projectionstart)
+    //        / 1000000.0);
+    //printf("models,%08.04f\n",
+    //        (double)kge_timer_nanos_diff(&end, &modelsstart)
+    //        / 1000000.0);
+    //printf("models ave,%08.04fms\n",
+    //        (double)kge_timer_nanos_diff(&end, &modelsstart) / ndraws
+    //        / 1000000.0);
 }

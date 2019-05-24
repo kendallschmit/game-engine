@@ -18,10 +18,14 @@
 #include "vao.h"
 #include "draw.h"
 
-#define NANOS 1000000000
-#define MICROS 1000000
-#define MILLIS 1000
+#define NANOS 1000000000l
+#define MICROS 1000000l
+#define MILLIS 1000l
 #define SCALE MICROS
+
+#define TARGET_FPS 60
+#define LATE_RENDER_SAFETY_NANOS (3 * NANOS / MILLIS)
+#define BAD_AVERAGE_RATIO 0.998
 
 // Dealing with objects
 #define OBJECTS_MAX 100000
@@ -32,8 +36,8 @@ struct object_group {
     struct timespec prev_tick_time;
 };
 
-struct object_group background_objs;
-struct object_group foreground_objs;
+struct object_group background_objs = { 0 };
+struct object_group foreground_objs = { 0 };
 
 static void physics_update(struct object_group *group, uint64_t nanos)
 {
@@ -76,6 +80,12 @@ static void main_thread(GLFWwindow *window, struct kge_thread *render_thread)
     srand(time(NULL));
 
     kge_thread_lock(render_thread); // Lock render thread during init
+
+    struct timespec init_time;
+    kge_timer_now(&init_time);
+    background_objs.prev_tick_time = init_time;
+    foreground_objs.prev_tick_time = init_time;
+
     // Only orthographic object is player for now
     kprint("Set up player");
     struct kge_obj *player = &foreground_objs.objs[0];
@@ -165,8 +175,10 @@ static void *render_thread_fn(void *thread_arg)
     draw_init(5, 1.5, 0.1, 1000, 6, 1000); // Init draw
 
     // Window dimensions
+    int winx, winy;
+    glfwGetWindowSize(args->window, &winx, &winy);
+    draw_set_dimensions((GLfloat)winx, (GLfloat)winy);
     glfwSetWindowSizeCallback(args->window, window_size_callback);
-    draw_set_dimensions((GLfloat)100, (GLfloat)100); // TODO
 
     tex_akko = texture_load("res/tga/akko.tga");
     tex_ritsu = texture_load("res/tga/ritsu128.tga");
@@ -175,13 +187,19 @@ static void *render_thread_fn(void *thread_arg)
     kprint("Signalling init");
     kge_thread_signal_init(thread);
 
+    uint64_t bad_average_render_time = NANOS / TARGET_FPS;
     // Main render loop
     while (!thread->terminated) {
-        //struct timespec ts = { 0, 8 * (NANOS / MILLIS) };
-        //nanosleep(&ts, NULL);
+        uint64_t sleep_ns = (NANOS / TARGET_FPS) - LATE_RENDER_SAFETY_NANOS;
+        if (sleep_ns > bad_average_render_time) sleep_ns -= bad_average_render_time;
+        else sleep_ns = 0;
+        //kprint("%08.04fms(av. worst), %08.04fms(sleep),", (double)bad_average_render_time / NANOS * MILLIS, (double)sleep_ns / NANOS * MILLIS)
+        struct timespec ts = { 0, sleep_ns };
+        nanosleep(&ts, NULL);
 
         struct timespec renderstart;
         kge_timer_now(&renderstart);
+
         // Calculate object positions
         kge_thread_lock(thread);
 
@@ -216,11 +234,11 @@ static void *render_thread_fn(void *thread_arg)
 
         struct timespec renderend;
         kge_timer_now(&renderend);
-        kprint("%08.04fms (total), %08.04fms(draw),",
-                (double)kge_timer_nanos_diff(&renderend, &renderstart)
-                / NANOS * 1000,
-                (double)kge_timer_nanos_diff(&renderend, &drawstart)
-                / NANOS * 1000);
+        uint64_t render_time = kge_timer_nanos_diff(&renderend, &renderstart);
+        if (render_time > bad_average_render_time)
+            bad_average_render_time = render_time * BAD_AVERAGE_RATIO + bad_average_render_time * (1 - BAD_AVERAGE_RATIO);
+        else
+            bad_average_render_time = render_time * (1 - BAD_AVERAGE_RATIO) + bad_average_render_time * BAD_AVERAGE_RATIO;
 
         glfwSwapBuffers(args->window);
     }
@@ -273,4 +291,5 @@ extern int engine_go()
     // Cleanup GLFW
     glfwDestroyWindow(window);
     glfwTerminate();
+    return 0;
 }
