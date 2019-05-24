@@ -2,4 +2,5 @@ bin
 lib
 build
 *.swp
+/*/*.mk
 .DS_Store

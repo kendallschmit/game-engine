@@ -6,7 +6,7 @@ bindir=bin
 # Compiler stuff
 CC = gcc-8
 CFLAGS += -O2 -std=c11
-CFLAGS += $(includedirs:%=-I%)
+CFLAGS += $(libinclude)
 LDFLAGS += -L$(libdir)
 LDLIBS += -lm
 OUTPUT_OPTION += -MMD
@@ -18,25 +18,20 @@ LDLIBS += -L/usr/local/lib
 # Default to build all
 all:
 
-# Libraries to build and dirs to include for them
-static_libraries :=
-includedirs :=
-# Programs to build
-programs :=
+# Track files
+bin =
+liba =
 
-# Functions for defining programs/libs
-include modules.mk
+obj =
+dep = $(obj:.o=.d)
 
-# List of modules (must have a ./<module>/module.mk)
-modules := glad game
+# Modules
+mk = glad/glad.mk game/game.mk
+%.mk: %.mk.in $(wildcard mk/*.mk.in)
+	-~/bin/kmakemk $< $@ $(@F:.mk=)
+-include $(mk)
 
-# Include modules, make obj and dep
-obj :=
-include $(modules:%=%/module.mk)
-dep := $(obj:.o=.d)
--include $(dep)
-
-all: $(static_libraries) $(programs)
+all: $(liba) $(bin)
 
 # Build rules for .o
 $(builddir)/%.o: %.c
@@ -44,16 +39,18 @@ $(builddir)/%.o: %.c
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(OUTPUT_OPTION)
 
 # Build rules for binaries
-$(programs):
+$(bin):
 	mkdir -p $(@D)
-	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(LDLIBS) $(LDFLAGS) -o $@
 
 # Build rules for libraries
-$(static_libraries):
+$(liba):
 	mkdir -p $(@D)
 	$(AR) r $@ $(filter %.o, $^)
 
 # Clean build and bin files
 .PHONY: clean
 clean:
-	-$(RM) -rf ./$(builddir) ./$(libdir) ./$(bindir)
+	$(RM) $(bin) $(liba) $(obj) $(dep) $(mk)
+
+-include $(dep)
