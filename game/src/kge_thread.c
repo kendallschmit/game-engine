@@ -11,7 +11,7 @@
 
 extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
         void *(*render_fn)(void *)) {
-    thread->sem = sem_open(sem_name, O_CREAT);
+    thread->sem = sem_open(sem_name, O_CREAT, 0600, 0);
     if (thread->sem == SEM_FAILED) {
         kprint("Error opening semaphore %s", strerror(errno));
         return -1;
