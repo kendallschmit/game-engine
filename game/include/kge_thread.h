@@ -17,7 +17,7 @@ struct kge_thread {
 };
 
 extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
-        void *(*render_fn)(void *));
+        void *(*fn)(void *));
 extern void kge_thread_end(struct kge_thread *thread);
 
 extern void kge_thread_lock(struct kge_thread *thread);

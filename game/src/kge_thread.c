@@ -4,13 +4,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <pthread.h>
-#include <semaphore.h>
-
 #include "kge_util.h"
 
 extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
-        void *(*render_fn)(void *)) {
+        void *(*fn)(void *)) {
     thread->sem = sem_open(sem_name, O_CREAT, 0600, 0);
     if (thread->sem == SEM_FAILED) {
         kprint("Error opening semaphore %s", strerror(errno));
@@ -23,7 +20,7 @@ extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
         sem_close(thread->sem);
         return -1;
     }
-    r = pthread_create(&thread->pthread, NULL, render_fn, thread);
+    r = pthread_create(&thread->pthread, NULL, fn, thread);
     if (r != 0) {
         sem_close(thread->sem);
         pthread_mutex_destroy(&thread->mutex);
