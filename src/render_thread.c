@@ -50,7 +50,7 @@ extern void *render_thread_fn(void *thread_arg)
 
     // Set up OpenGL context
     glfwMakeContextCurrent(args->window); // Get context for window
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress); // Load functions
+    gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress); // Load functions
     glfwSwapInterval(1); // Vsync
 
     shader_init(); // Init shaders
@@ -108,7 +108,6 @@ extern void *render_thread_fn(void *thread_arg)
 
         glClear(GL_COLOR_BUFFER_BIT
                 | GL_DEPTH_BUFFER_BIT
-                | GL_ACCUM_BUFFER_BIT
                 | GL_STENCIL_BUFFER_BIT);
         draw_list(background_objs.draws, background_objs.count,
                 PROJECTION_PERSPECTIVE, true, true);

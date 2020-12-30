@@ -1,8 +1,0 @@
-@outfile = $(libdir)/lib@.a
-
-@%mk/c.mk.in
-
-@outh = $(wildcard $(@includedir)/glad/*.h)
-
-liba += $(@outfile)
-libinclude += -I$(@includedir)

@@ -1,56 +1,64 @@
+# Platform selection
+PLATFORM ?= macos
+
+$(info PLATFORM=$(PLATFORM))
+
+define platform_error
+
+
+Available platforms:
+	macos
+
+Please select a platform to build
+endef
+
+ifeq ($(PLATFORM),macos)
+    CFLAGS += -I/opt/local/include
+    LDLIBS +=
+    LDFLAGS += -L/opt/local/lib  -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+else
+    $(error $(platform_error))
+endif
+
 # Directories
+srcdir=src
+includedir=include
 builddir=build
 libdir=lib
 bindir=bin
 
-# Compiler stuff
-CC = gcc-9
-CFLAGS += -O2 -std=c11
-CFLAGS += $(libinclude)
+# Compile/link options
+CC = gcc
+CFLAGS += -I$(includedir) -O2 -std=c11
+#CFLAGS += -Wpedantic -Werror -Wfatal-errors
+CFLAGS += -MMD
 LDFLAGS += -L$(libdir)
-LDLIBS += -lm
-OUTPUT_OPTION += -MMD
+LDLIBS += -lm -lglfw
 
-# macOS
-CFLAGS += -I/usr/local/include
-LDLIBS += -L/usr/local/lib
-
-# Default to build all
-all:
-
-# Track files
-bin =
-liba =
-
-obj =
+# Files
+bin = $(bindir)/game
+src = $(wildcard $(srcdir)/*.c)
+obj = $(patsubst $(srcdir)/%.c,$(builddir)/%.o,$(src))
 dep = $(obj:.o=.d)
 
-# Modules
-mk = glad/glad.mk game/game.mk
-%.mk: %.mk.in $(wildcard mk/*.mk.in)
-	-~/bin/kmakemk $< $@ $(@F:.mk=)
--include $(mk)
+# Build all by default
+all: $(bin)
 
-all: $(liba) $(bin)
-
-# Build rules for .o
-$(builddir)/%.o: %.c
-	mkdir -p $(@D)
-	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(OUTPUT_OPTION)
-
-# Build rules for binaries
-$(bin):
+# Build rules for game binary
+$(bin): $(obj)
+	$(info $@ older than: $?)
 	mkdir -p $(@D)
 	$(CC) $^ $(LDLIBS) $(LDFLAGS) -o $@
 
-# Build rules for libraries
-$(liba):
+# Build rules for .o
+$(builddir)/%.o: $(srcdir)/%.c
+	$(info $@ older than: $?)
 	mkdir -p $(@D)
-	$(AR) r $@ $(filter %.o, $^)
+	$(CC) -c $< $(CFLAGS) -o $@
 
 # Clean build and bin files
 .PHONY: clean
 clean:
-	$(RM) $(bin) $(liba) $(obj) $(dep) $(mk)
+	$(RM) $(bin) $(obj) $(dep) $(mk)
 
 -include $(dep)

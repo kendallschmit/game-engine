@@ -1,5 +1,0 @@
-@outfile = $(bindir)/@
-
-bin += $(@outfile)
-
-@%mk/c.mk.in
