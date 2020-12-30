@@ -28,13 +28,6 @@ struct object_group {
     struct timespec prev_tick_time;
 };
 
-extern struct object_group background_objs;
-extern struct object_group foreground_objs;
-
-extern GLuint tex_akko;
-extern GLuint tex_ritsu;
-
-int engine_go();
-void physics_update(struct object_group *group, uint64_t nanos);
+int engine_go(void);
 
 #endif

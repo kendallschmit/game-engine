@@ -6,8 +6,6 @@
 
 #include <glad/glad.h>
 
-#include "kge_timer.h"
-
 bool kge_util_kprint_needs_header(char const *file, char const *func);
 
 #define kprint(...) do {\

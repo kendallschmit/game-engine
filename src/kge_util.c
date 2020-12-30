@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-static char const *kprint_last_file = NULL;
-static char const *kprint_last_func = NULL;
+char const *kprint_last_file = NULL;
+char const *kprint_last_func = NULL;
+
 bool kge_util_kprint_needs_header(char const *file, char const *func)
 {
     if (kprint_last_file != file || kprint_last_func != func) {

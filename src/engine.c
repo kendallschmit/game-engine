@@ -9,36 +9,86 @@
 #include <GLFW/glfw3.h>
 
 #include "input.h"
-#include "render_thread.h"
+#include "kge_render.h"
 #include "kge_util.h"
 #include "kge_timer.h"
-#include "kge_thread.h"
 #include "vectors.h"
 #include "shader.h"
 #include "texture.h"
 #include "vao.h"
-#include "draw.h"
 
-struct object_group background_objs = { 0 };
-struct object_group foreground_objs = { 0 };
+static void error_callback(int error, const char* description);
 
-GLuint tex_akko;
-GLuint tex_ritsu;
+static void engine_loop(GLFWwindow *window);
+
+static void physics_update(struct object_group *group, uint64_t nanos);
+static void update_draw_positions(struct object_group *group);
+
+int engine_go(void)
+{
+    // Subscribe to GLFW errors
+    glfwSetErrorCallback(error_callback);
+    // Get context with GLFW
+    if (!glfwInit())
+        return -1;
+    // OpenGL 4.1, no backward/forward compatibility
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // Make the window
+    GLFWwindow *window = glfwCreateWindow(640, 480, "Your Mom", NULL, NULL);
+    if (window == NULL) {
+        glfwTerminate();
+        return -1;
+    }
+    // Register key-press callback
+    glfwSetKeyCallback(window, input_key_callback);
+
+    kge_render_init(window);
+    shader_init(); // Init shaders
+    vaos_init(); // Init vaos
+    draw_init(5, 1.5, 0.1, 1000, 6, 1000); // Init draw
+
+    kge_render_update_window_size(window);
+
+    // Engine loop
+    kprint("Enter engine loop");
+    engine_loop(window);
+    kprint("Exit engine loop");
+
+    // Clean up kge_render
+    vaos_deinit();
+    shader_deinit();
+
+    // Clean up GLFW
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
 
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void engine_thread_fn(GLFWwindow *window, struct kge_thread *render_thread)
+static void engine_loop(GLFWwindow *window)
 {
+    kprint("Load textures");
+    // Load textures
+    GLuint tex_akko = texture_load("res/tga/akko.tga");
+    GLuint tex_ritsu = texture_load("res/tga/ritsu128.tga");
+    kprint("Done loading textures");
+
     // Set up game
     srand(time(NULL));
 
-    kge_thread_lock(render_thread); // Lock render thread during init
-
     struct timespec init_time;
     kge_timer_now(&init_time);
+
+    static struct object_group background_objs = { 0 };
+    static struct object_group foreground_objs = { 0 };
+
     background_objs.prev_tick_time = init_time;
     foreground_objs.prev_tick_time = init_time;
 
@@ -71,13 +121,11 @@ static void engine_thread_fn(GLFWwindow *window, struct kge_thread *render_threa
         //o->vel.y = 80;
     }
     background_objs.count = nritsus;
-    kge_thread_unlock(render_thread); // Render thread is safe to go
 
     // Loop
     while (!glfwWindowShouldClose(window)) {
         // Input
         glfwPollEvents();
-        kge_thread_lock(render_thread);
 
         // Apply velocity to player
         player->vel = (struct vec3i){ 0, 0, 0 };
@@ -93,63 +141,29 @@ static void engine_thread_fn(GLFWwindow *window, struct kge_thread *render_threa
         // Physics update
         struct timespec now;
         kge_timer_now(&now);
+        physics_update(&background_objs,
+                kge_timer_nanos_diff(&now, &background_objs.prev_tick_time));
+        background_objs.prev_tick_time = now;
         physics_update(&foreground_objs,
                 kge_timer_nanos_diff(&now, &foreground_objs.prev_tick_time));
         foreground_objs.prev_tick_time = now;
 
-        kge_thread_unlock(render_thread);
+        update_draw_positions(&background_objs);
+        update_draw_positions(&foreground_objs);
 
-        struct timespec ts = { 0, 1 * (NANOS / MILLIS) };
-        nanosleep(&ts, NULL);
+        // Render
+        kge_render_start();
+
+        draw_list(background_objs.draws, background_objs.count,
+                PROJECTION_PERSPECTIVE, true, true);
+        draw_list(foreground_objs.draws, foreground_objs.count,
+                PROJECTION_ORTHOGRAPHIC, true, true);
+
+        kge_render_finish(window);
     }
 }
 
-int engine_go()
-{
-    // Subscribe to GLFW errors
-    glfwSetErrorCallback(error_callback);
-    // Get context with GLFW
-    if (!glfwInit())
-        return -1;
-    // OpenGL 4.1, no backward/forward compatibility
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    // Make the window
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Your Mom", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
-        return -1;
-    }
-    // Register key-press callback
-    glfwSetKeyCallback(window, input_key_callback);
-
-    // Start render thread
-    struct render_thread_args render_thread_args = { .window = window };
-    struct kge_thread render_thread = { .arg = &render_thread_args };
-    if (kge_thread_start(&render_thread, "/renderer", render_thread_fn) != 0) {
-        kprint("Unable to start render thread");
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
-    kprint("Waiting for render thread to initialize");
-    kge_thread_wait_for_init(&render_thread);
-    kprint("Done waiting");
-
-    engine_thread_fn(window, &render_thread);
-
-    kge_thread_end(&render_thread);
-    kprint("Render thread ended");
-
-    // Cleanup GLFW
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    return 0;
-}
-
-void physics_update(struct object_group *group, uint64_t nanos)
+static void physics_update(struct object_group *group, uint64_t nanos)
 {
     uint64_t deltatime = nanos / (NANOS / SCALE);
     // Physics (all integers)
@@ -162,5 +176,15 @@ void physics_update(struct object_group *group, uint64_t nanos)
         while (o->pos.z > 10 * SCALE) {
             o->pos.z -= 1010 * SCALE;
         }
+    }
+}
+
+static void update_draw_positions(struct object_group *group)
+{
+    for (GLuint i = 0; i < group->count; i++) {
+        struct kge_obj *o = &group->objs[i];
+        o->draw->pos.x = (GLfloat)o->pos.x / SCALE;
+        o->draw->pos.y = (GLfloat)o->pos.y / SCALE;
+        o->draw->pos.z = (GLfloat)o->pos.z / SCALE;
     }
 }

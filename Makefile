@@ -29,7 +29,7 @@ bindir=bin
 
 # Compile/link options
 CC = gcc
-CFLAGS += -I$(includedir) -O2 -std=c11
+CFLAGS += -I$(includedir) -O0 -std=c11 -g
 #CFLAGS += -Wpedantic -Werror -Wfatal-errors
 CFLAGS += -MMD
 LDFLAGS += -L$(libdir)
@@ -46,13 +46,11 @@ all: $(bin)
 
 # Build rules for game binary
 $(bin): $(obj)
-	$(info $@ older than: $?)
 	mkdir -p $(@D)
 	$(CC) $^ $(LDLIBS) $(LDFLAGS) -o $@
 
 # Build rules for .o
 $(builddir)/%.o: $(srcdir)/%.c
-	$(info $@ older than: $?)
 	mkdir -p $(@D)
 	$(CC) -c $< $(CFLAGS) -o $@
 
