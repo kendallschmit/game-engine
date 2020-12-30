@@ -25,7 +25,7 @@ struct object_group {
     struct draw draws[OBJECTS_MAX];
     struct kge_obj objs[OBJECTS_MAX];
     GLuint count;
-    struct timespec prev_tick_time;
+    uint64_t prev_tick_time;
 };
 
 int engine_go(void);

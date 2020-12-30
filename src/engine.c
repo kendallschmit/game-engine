@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include <time.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -83,8 +82,7 @@ static void engine_loop(GLFWwindow *window)
     // Set up game
     srand(time(NULL));
 
-    struct timespec init_time;
-    kge_timer_now(&init_time);
+    uint64_t init_time = kge_timer_now();
 
     static struct object_group background_objs = { 0 };
     static struct object_group foreground_objs = { 0 };
@@ -139,13 +137,10 @@ static void engine_loop(GLFWwindow *window)
             player->vel.x = 3;
 
         // Physics update
-        struct timespec now;
-        kge_timer_now(&now);
-        physics_update(&background_objs,
-                kge_timer_nanos_diff(&now, &background_objs.prev_tick_time));
+        uint64_t now = kge_timer_now();
+        physics_update(&background_objs, now - background_objs.prev_tick_time);
         background_objs.prev_tick_time = now;
-        physics_update(&foreground_objs,
-                kge_timer_nanos_diff(&now, &foreground_objs.prev_tick_time));
+        physics_update(&foreground_objs, now - foreground_objs.prev_tick_time);
         foreground_objs.prev_tick_time = now;
 
         update_draw_positions(&background_objs);
