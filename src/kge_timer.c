@@ -40,14 +40,14 @@ static void tssub(struct timespec *a, struct timespec *b)
     a->tv_nsec -= b->tv_nsec;
 }
 
-extern void kge_timer_now(struct timespec *ts)
+void kge_timer_now(struct timespec *ts)
 {
     if (clock_gettime(CLOCK_MONOTONIC, ts)) {
         kprint("Error reading monotonic clock: %s", strerror(errno));
     }
 }
 
-extern uint64_t kge_timer_nanos_diff(struct timespec *a, struct timespec *b)
+uint64_t kge_timer_nanos_diff(struct timespec *a, struct timespec *b)
 {
     uint64_t nanos = (a->tv_sec - b->tv_sec) * BILLION;
     nanos += a->tv_nsec - b->tv_nsec;

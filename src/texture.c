@@ -7,7 +7,7 @@
 #include "kge_util.h"
 
 // Textures
-extern GLuint texture_load(char *path)
+GLuint texture_load(char *path)
 {
     FILE *f = fopen(path, "r");
     if (f == NULL) {

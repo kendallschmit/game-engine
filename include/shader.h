@@ -5,7 +5,7 @@
 
 extern GLuint shader_program_simple;
 
-extern void shader_init();
-extern void shader_deinit();
+void shader_init();
+void shader_deinit();
 
 #endif

@@ -34,7 +34,7 @@ extern struct object_group foreground_objs;
 extern GLuint tex_akko;
 extern GLuint tex_ritsu;
 
-extern int engine_go();
-extern void physics_update(struct object_group *group, uint64_t nanos);
+int engine_go();
+void physics_update(struct object_group *group, uint64_t nanos);
 
 #endif

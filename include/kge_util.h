@@ -8,7 +8,7 @@
 
 #include "kge_timer.h"
 
-extern bool kge_util_kprint_needs_header(char const *file, char const *func);
+bool kge_util_kprint_needs_header(char const *file, char const *func);
 
 #define kprint(...) do {\
     if (kge_util_kprint_needs_header(__FILE__, __func__)) {\
@@ -20,7 +20,7 @@ extern bool kge_util_kprint_needs_header(char const *file, char const *func);
     fflush(stdout);\
 } while (0);
 
-extern GLfloat randf(GLfloat minimum, GLfloat maximum);
-extern GLint randi(GLfloat minimum, GLfloat maximum);
+GLfloat randf(GLfloat minimum, GLfloat maximum);
+GLint randi(GLfloat minimum, GLfloat maximum);
 
 #endif

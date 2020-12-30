@@ -42,7 +42,7 @@ static void window_size_callback(GLFWwindow *window, int x, int y)
     draw_set_dimensions((GLfloat)x, (GLfloat)y);
 }
 
-extern void *render_thread_fn(void *thread_arg)
+void *render_thread_fn(void *thread_arg)
 {
     // Get args
     struct kge_thread *thread = (struct kge_thread *)thread_arg;

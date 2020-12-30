@@ -2,7 +2,7 @@
 
 GLuint vaos[VAOS_MAX];
 
-extern void vaos_init() {
+void vaos_init() {
     GLuint vao; // Name of VAO
     glGenVertexArrays(1, &vao); // Generate one VAO
     glBindVertexArray(vao); // Make it active VAO
@@ -47,6 +47,6 @@ extern void vaos_init() {
     vaos[VAO_QUAD] = vao;
 }
 
-extern void vaos_deinit() {
+void vaos_deinit() {
     glDeleteVertexArrays(VAOS_MAX, vaos);
 }

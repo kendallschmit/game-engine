@@ -42,7 +42,7 @@ static GLuint load_shader(char *path, GLenum shader_type) {
 static GLuint fshad = 0;
 static GLuint vshad = 0;
 
-extern void shader_init() {
+void shader_init() {
     vshad = load_shader("res/shader/simple_vertex.glsl", GL_VERTEX_SHADER);
     fshad = load_shader("res/shader/simple_fragment.glsl", GL_FRAGMENT_SHADER);
 
@@ -54,7 +54,7 @@ extern void shader_init() {
     glLinkProgram(shader_program_simple);
 }
 
-extern void shader_deinit() {
+void shader_deinit() {
     glDeleteShader(vshad);
     glDeleteShader(fshad);
 

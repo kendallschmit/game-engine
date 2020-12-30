@@ -6,7 +6,7 @@
 
 #include "kge_util.h"
 
-extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
+int kge_thread_start(struct kge_thread *thread, const char *sem_name,
         void *(*fn)(void *)) {
     thread->sem = sem_open(sem_name, O_CREAT, 0600, 0);
     if (thread->sem == SEM_FAILED) {
@@ -30,7 +30,7 @@ extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
     return 0;
 }
 
-extern void kge_thread_end(struct kge_thread *thread) {
+void kge_thread_end(struct kge_thread *thread) {
     thread->terminated = true;
     void *value_ptr;
     int r = pthread_join(thread->pthread, &value_ptr);
@@ -39,21 +39,21 @@ extern void kge_thread_end(struct kge_thread *thread) {
     }
 }
 
-extern void kge_thread_lock(struct kge_thread *thread) {
+void kge_thread_lock(struct kge_thread *thread) {
     int r = pthread_mutex_lock(&thread->mutex);
     if (r != 0) {
         kprint("Error locking mutex: %s", strerror(r));
     }
 }
 
-extern void kge_thread_unlock(struct kge_thread *thread) {
+void kge_thread_unlock(struct kge_thread *thread) {
     int r = pthread_mutex_unlock(&thread->mutex);
     if (r != 0) {
         kprint("Error unlocking mutex: %s", strerror(r));
     }
 }
 
-extern void kge_thread_wait_for_init(struct kge_thread *thread) {
+void kge_thread_wait_for_init(struct kge_thread *thread) {
     while (!thread->initialized) {
         if (sem_wait(thread->sem) != 0) {
             kprint("Error waiting for init: %s", strerror(errno));
@@ -62,7 +62,7 @@ extern void kge_thread_wait_for_init(struct kge_thread *thread) {
     }
 }
 
-extern void kge_thread_signal_init(struct kge_thread *thread) {
+void kge_thread_signal_init(struct kge_thread *thread) {
     thread->initialized = true;
     if (sem_post(thread->sem) != 0) {
         kprint("Error signalling init: %s", strerror(errno));

@@ -8,7 +8,7 @@
 
 extern GLuint vaos[VAOS_MAX];
 
-extern void vaos_init();
-extern void vaos_deinit();
+void vaos_init();
+void vaos_deinit();
 
 #endif

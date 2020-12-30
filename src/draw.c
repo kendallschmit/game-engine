@@ -78,7 +78,7 @@ static GLfloat far_clip;
 static GLfloat ortho_width;
 static GLfloat ortho_depth;
 
-extern void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
+void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
         GLfloat near_clip_a, GLfloat far_clip_a, GLfloat ortho_width_a,
         GLfloat ortho_depth_a)
 {
@@ -106,7 +106,7 @@ extern void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
     glUniformMatrix4fv(view_matrix_location, 1, GL_FALSE, view_matrix);
 }
 
-extern void draw_set_dimensions(GLuint w, GLuint h)
+void draw_set_dimensions(GLuint w, GLuint h)
 {
     // Have to regenerat projection matrices for new aspect ratio
     GLfloat ratio = (GLfloat)w / h;
@@ -116,7 +116,7 @@ extern void draw_set_dimensions(GLuint w, GLuint h)
             ortho_depth, w, h);
 }
 
-extern void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
+void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
         bool same_vao, bool same_tex)
 {
     struct timespec projectionstart;

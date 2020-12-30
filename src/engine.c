@@ -104,7 +104,7 @@ static void engine_thread_fn(GLFWwindow *window, struct kge_thread *render_threa
     }
 }
 
-extern int engine_go()
+int engine_go()
 {
     // Subscribe to GLFW errors
     glfwSetErrorCallback(error_callback);
@@ -149,7 +149,7 @@ extern int engine_go()
     return 0;
 }
 
-extern void physics_update(struct object_group *group, uint64_t nanos)
+void physics_update(struct object_group *group, uint64_t nanos)
 {
     uint64_t deltatime = nanos / (NANOS / SCALE);
     // Physics (all integers)

@@ -12,6 +12,6 @@ struct render_thread_args
     GLFWwindow *window;
 };
 
-extern void *render_thread_fn(void *thread_arg);
+void *render_thread_fn(void *thread_arg);
 
 #endif

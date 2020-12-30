@@ -3,6 +3,6 @@
 
 #include <glad/glad.h>
 
-extern GLuint texture_load(char *path);
+GLuint texture_load(char *path);
 
 #endif

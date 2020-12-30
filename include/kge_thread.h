@@ -16,14 +16,14 @@ struct kge_thread {
     pthread_t pthread;
 };
 
-extern int kge_thread_start(struct kge_thread *thread, const char *sem_name,
+int kge_thread_start(struct kge_thread *thread, const char *sem_name,
         void *(*fn)(void *));
-extern void kge_thread_end(struct kge_thread *thread);
+void kge_thread_end(struct kge_thread *thread);
 
-extern void kge_thread_lock(struct kge_thread *thread);
-extern void kge_thread_unlock(struct kge_thread *thread);
+void kge_thread_lock(struct kge_thread *thread);
+void kge_thread_unlock(struct kge_thread *thread);
 
-extern void kge_thread_wait_for_init(struct kge_thread *thread);
-extern void kge_thread_signal_init(struct kge_thread *thread);
+void kge_thread_wait_for_init(struct kge_thread *thread);
+void kge_thread_signal_init(struct kge_thread *thread);
 
 #endif
