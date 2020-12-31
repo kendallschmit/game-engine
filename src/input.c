@@ -1,14 +1,24 @@
 #include "input.h"
 
+#include <stdio.h>
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action,
+        int mods);
+static void window_close_callback(GLFWwindow *window);
+
 struct input_set input = { 0 };
 
-void input_key_callback(GLFWwindow* window, int key, int scancode, int action,
+void input_init(GLFWwindow *window)
+{
+    // Register key-press callback
+    glfwSetKeyCallback(window, key_callback);
+    // Register window close callback (click on X, alt+F4, etc.)
+    glfwSetWindowCloseCallback(window, window_close_callback);
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action,
         int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        return;
-    }
     bool *val;
     switch (key) {
         case GLFW_KEY_UP:
@@ -23,13 +33,16 @@ void input_key_callback(GLFWwindow* window, int key, int scancode, int action,
         case GLFW_KEY_RIGHT:
             val = &input.right;
             break;
+        case GLFW_KEY_ESCAPE:
+            val = &input.quit;
+            break;
         default:
             return;
     }
-    if (action == GLFW_PRESS) {
-        *val = true;
-    }
-    else if (action == GLFW_RELEASE) {
-        *val = false;
-    }
+    *val = action != GLFW_RELEASE;
+}
+
+static void window_close_callback(GLFWwindow *window)
+{
+    input.quit = true;
 }

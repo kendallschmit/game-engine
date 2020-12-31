@@ -1,8 +1,6 @@
-#include "engine.h"
-
-#include <stdio.h>
+#include "game.h"
 
 int main(void) {
-    engine_go();
+    game_run();
     return 0;
 }

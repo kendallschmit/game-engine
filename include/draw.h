@@ -7,14 +7,14 @@
 
 #include "vectors.h"
 
-#define PROJECTION_ORTHOGRAPHIC 0
-#define PROJECTION_PERSPECTIVE 1
-
 struct draw {
     GLuint vao;
     GLuint tex;
     struct vec3 pos;
 };
+
+#define PROJECTION_ORTHOGRAPHIC 0
+#define PROJECTION_PERSPECTIVE 1
 
 void draw_init(GLfloat view_distance, GLfloat fov_rad, GLfloat near_clip,
         GLfloat far_clip, GLfloat ortho_width, GLfloat ortho_depth);

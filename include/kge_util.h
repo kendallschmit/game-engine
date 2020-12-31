@@ -6,6 +6,8 @@
 
 #include <glad/glad.h>
 
+#define ARRAY_LEN(a) (sizeof(a) / sizeof(*a))
+
 bool kge_util_kprint_needs_header(char const *file, char const *func);
 
 #define kprint(...) do {\

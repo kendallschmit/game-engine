@@ -4,16 +4,17 @@
 #include <stdbool.h>
 #include <GLFW/glfw3.h>
 
-void input_key_callback(GLFWwindow* window, int key, int scancode, int action,
-        int mods);
-
 struct input_set {
     bool up;
     bool down;
     bool left;
     bool right;
+
+    bool quit;
 };
 
 extern struct input_set input;
+
+void input_init(GLFWwindow *window);
 
 #endif
