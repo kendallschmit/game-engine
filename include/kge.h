@@ -7,7 +7,8 @@
 int kge_init(void);
 void kge_deinit(void);
 
+void kge_poll_input(void);
+
 uint64_t kge_show_frame(void);
-uint64_t kge_prev_frame_time(void);
 
 #endif

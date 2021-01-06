@@ -17,18 +17,23 @@
 #include "vao.h"
 #include "draw.h"
 
-#define FRAMERATE_MAX_SMOOTH_RATIO 3
-
 static void error_callback(int error, const char* description);
 static void window_size_callback(GLFWwindow *glfw_window, int x, int y);
 
 static GLFWwindow *window = NULL;
 
-static uint64_t prev_frame_time = 0;
-static int jitter_count = 0;
+static uint64_t current_time = 0;
+static uint64_t current_time_smooth = 0;
 
-static uint64_t delta_time_hist[10] = { 0 };
-static uint64_t delta_time_hist_index = 0;
+static uint64_t dt_hist[9] = { 0 };
+static size_t dt_hist_i = 0;
+static uint64_t dt_hist_median_smooth = 0;
+
+static uint64_t append_dt_hist(uint64_t dt);
+static uint64_t median_dt_hist(void);
+static uint64_t qselect(uint64_t *l, size_t n, size_t k);
+static size_t qpartition(uint64_t *l, size_t n, size_t p);
+static void qswap(uint64_t *a, uint64_t *b);
 
 int kge_init(void)
 {
@@ -75,6 +80,12 @@ int kge_init(void)
 
     // Seed random number generator
     srand(time(NULL));
+
+    // Pretend the first frame time was right now
+    current_time = kge_timer_now();
+    current_time_smooth = current_time;
+
+    return 0;
 }
 
 void kge_deinit(void)
@@ -92,68 +103,27 @@ uint64_t kge_show_frame(void)
 {
     glfwSwapBuffers(window);
 
-    // Get time delta, update prev_frame_time
-    uint64_t dt = kge_timer_now() - prev_frame_time;
-    prev_frame_time += dt;
-    // Calculate minimum, average, and maximum past time deltas
-    uint64_t dt_min = UINT64_MAX;
-    uint64_t dt_max = 0;
-    uint64_t dt_avg = 0;
-    uint64_t dt_samples = 0;
-    for (size_t i = 0; i < ARRAY_LEN(delta_time_hist); i++) {
-        uint64_t dti = delta_time_hist[i];
-        if (dti == 0)
-            continue;
-        if (dti < dt_min)
-            dt_min = dti;
-        if (dti > dt_max)
-            dt_max = dti;
-        dt_avg += dti;
-        dt_samples++;
-    }
-    if (dt_samples > 0)
-        dt_avg /= dt_samples;
-    uint64_t dt_min_dev = dt_avg - dt_avg / FRAMERATE_MAX_SMOOTH_RATIO;
-    uint64_t dt_max_dev = dt_avg + dt_avg / FRAMERATE_MAX_SMOOTH_RATIO;
-    bool hist_good = dt_samples > 0
-            && dt_min > dt_min_dev
-            && dt_max < dt_max_dev;
-    bool dt_good = !hist_good || (dt > dt_min_dev && dt < dt_max_dev);
-    //kprint("dt %.3fms, min %.3fms, avg %.3fms, max %.3fms, "
-    //        "min_dev %.3fms, max_dev %.3fms, "
-    //        "samples %" PRIu64 ", dt %s, hist %s ",
-    //        ((float)dt) / 1000000,
-    //        ((float)dt_min) / 1000000,
-    //        ((float)dt_avg) / 1000000,
-    //        ((float)dt_max) / 1000000,
-    //        ((float)dt_min_dev) / 1000000,
-    //        ((float)dt_max_dev) / 1000000,
-    //        dt_samples,
-    //        dt_good ? "good" : " bad",
-    //        hist_good ? "good" : " bad");
-    if (dt_good) {
-        delta_time_hist[delta_time_hist_index] = dt;
-        dt = dt_avg;
+    uint64_t dt = kge_timer_now() - current_time;
+    current_time += dt;
+
+    uint64_t dt_median = median_dt_hist();
+    uint64_t dt_smooth = 0;
+    if (current_time > current_time_smooth)
+        dt_smooth = current_time - current_time_smooth;
+
+    if (dt_median != 0) {
+        uint64_t nframes = (dt_smooth + dt_median / 2) / dt_median;
+        if (nframes < 1)
+            nframes = 1;
+        dt_smooth = (dt_smooth * 1 + dt_median * nframes * 2) / 3;
+        append_dt_hist(dt / nframes);
     }
     else {
-        delta_time_hist[delta_time_hist_index] = 0;
+        append_dt_hist(dt);
     }
-    delta_time_hist_index++;
-    delta_time_hist_index %= ARRAY_LEN(delta_time_hist);
+    current_time_smooth += dt_smooth;
 
-
-    glClear(GL_COLOR_BUFFER_BIT
-            | GL_DEPTH_BUFFER_BIT
-            | GL_STENCIL_BUFFER_BIT);
-
-    glfwPollEvents();
-
-    return dt;
-}
-
-uint64_t kge_prev_frame_time(void)
-{
-    return prev_frame_time;
+    return dt_smooth;
 }
 
 static void error_callback(int error, const char* description)
@@ -166,3 +136,65 @@ static void window_size_callback(GLFWwindow *glfw_window, int x, int y)
 {
     draw_set_dimensions((GLfloat)x, (GLfloat)y);
 }
+
+static uint64_t append_dt_hist(uint64_t dt)
+{
+    dt_hist[dt_hist_i++] = dt;
+    dt_hist_i %= ARRAY_LEN(dt_hist);
+}
+
+static uint64_t median_dt_hist(void)
+{
+    uint64_t l[ARRAY_LEN(dt_hist)];
+    for (size_t i = 0; i < ARRAY_LEN(dt_hist); i++) {
+        if (dt_hist[i] == 0)
+            return 0;
+        l[i] = dt_hist[i];
+    }
+    uint64_t m = qselect(l, ARRAY_LEN(l), ARRAY_LEN(l) / 2);
+    if (dt_hist_median_smooth == 0) {
+        dt_hist_median_smooth = m;
+    }
+    else {
+        dt_hist_median_smooth = (m + dt_hist_median_smooth * 31) / 32;
+    }
+    return dt_hist_median_smooth;
+}
+
+static uint64_t qselect(uint64_t *l, size_t n, size_t k)
+{
+    if (n == 1)
+        return l[0];
+    size_t p = n / 2;
+    p = qpartition(l, n, p);
+    if (p == k)
+        return l[p];
+    else if (p < k)
+        return qselect(&l[p + 1], n - (p + 1), k - (p + 1));
+    else
+        return qselect(l, p, k);
+}
+
+static size_t qpartition(uint64_t *l, size_t n, size_t p)
+{
+    uint64_t tmp;
+    uint64_t pivot = l[p];
+    size_t s = 0;
+
+    qswap(&l[p], &l[n - 1]);
+    for (size_t i = 0; i < n - 1; i++) {
+        if (l[i] < pivot) {
+            qswap(&l[i], &l[s++]);
+        }
+    }
+    qswap(&l[s], &l[n - 1]);
+    return s;
+}
+
+static void qswap(uint64_t *a, uint64_t *b)
+{
+    uint64_t tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
