@@ -17,4 +17,6 @@ extern struct input_set input;
 
 void input_init(GLFWwindow *window);
 
+void input_poll(void);
+
 #endif

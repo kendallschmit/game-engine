@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include "kge.h"
+#include "kge_timer.h"
 #include "input.h"
 #include "kge_util.h"
 #include "vectors.h"
@@ -29,7 +30,7 @@ struct obj {
     struct draw *draw;
 };
 
-#define OBJECTS_MAX 100000
+#define OBJECTS_MAX 1000000
 struct obj_group {
     struct draw draws[OBJECTS_MAX];
     struct obj objs[OBJECTS_MAX];
@@ -98,10 +99,21 @@ static void game_loop()
     }
     background_objs.count = nritsus;
 
+    uint64_t draw_time = 0;
+    uint64_t draw_count = 0;
+
     // Gameplay loop
     while (!input.quit) {
         // Show the frame (blocks until it is displayed on screen)
         uint64_t delta_time = kge_show_frame();
+
+        uint64_t input_start = kge_timer_now();
+
+        // TODO Make input poll threaded
+        input_poll();
+
+        uint64_t input_end = kge_timer_now();
+        uint64_t physics_start = input_end;
 
         // Apply velocity to player
         player->vel = (struct vec3i){ 0, 0, 0 };
@@ -118,16 +130,26 @@ static void game_loop()
         physics_update(&background_objs, delta_time);
         physics_update(&foreground_objs, delta_time);
 
-        // Update draws with new positions
-        update_draw_positions(&background_objs);
-        update_draw_positions(&foreground_objs);
+        if (player->pos.x > 8 * SCALE)
+            player->pos.x = -8 * SCALE;
+
+        uint64_t physics_end = kge_timer_now();
+        uint64_t draw_start = physics_end;
 
         // Draw objects
+        draw_clear();
         draw_list(background_objs.draws, background_objs.count,
-                PROJECTION_PERSPECTIVE, true, true);
+                PROJECTION_PERSPECTIVE);
         draw_list(foreground_objs.draws, foreground_objs.count,
-                PROJECTION_ORTHOGRAPHIC, true, true);
+                PROJECTION_ORTHOGRAPHIC);
+
+        uint64_t draw_end = kge_timer_now();
+
+        draw_time += draw_end - draw_start;
+        draw_count++;
     }
+    kprint("average draw time: %fms",
+            (float)(draw_time / draw_count) / 1000000);
 }
 
 static void physics_update(struct obj_group *group, uint64_t nanos)
@@ -143,13 +165,7 @@ static void physics_update(struct obj_group *group, uint64_t nanos)
         while (o->pos.z > 10 * SCALE) {
             o->pos.z -= 1010 * SCALE;
         }
-    }
-}
 
-static void update_draw_positions(struct obj_group *group)
-{
-    for (GLuint i = 0; i < group->count; i++) {
-        struct obj *o = &group->objs[i];
         o->draw->pos.x = (GLfloat)o->pos.x / SCALE;
         o->draw->pos.y = (GLfloat)o->pos.y / SCALE;
         o->draw->pos.z = (GLfloat)o->pos.z / SCALE;
