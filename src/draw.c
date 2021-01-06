@@ -4,9 +4,10 @@
 #include <math.h>
 
 #include "shader.h"
+#include "vao.h"
 #include "kge_util.h"
 
-#define OBJ_MAX 100000
+static GLfloat offsets[3 * VAO_OFFSETS_MAX] = { 0 };
 
 // Identity matrix used to reset other matrices
 static GLfloat identity4[] = {
@@ -66,6 +67,7 @@ static GLfloat perspective_matrix[16];
 static GLfloat view_matrix[16];
 
 // References to shader args for projection matrices
+static GLint model_matrices_location;
 static GLint model_matrix_location;
 static GLint view_matrix_location;
 static GLint proj_matrix_location;
@@ -92,6 +94,8 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
 
     // Use simple shader and figure out where the parameters go
     glUseProgram(shader_program_simple);
+    model_matrices_location = glGetUniformLocation(shader_program_simple,
+            "modelmats");
     model_matrix_location = glGetUniformLocation(shader_program_simple,
             "modelmat");
     view_matrix_location = glGetUniformLocation(shader_program_simple,
@@ -115,9 +119,17 @@ void draw_set_dimensions(GLuint w, GLuint h)
             ortho_depth, w, h);
 }
 
-void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
-        bool same_vao, bool same_tex)
+void draw_clear(void)
 {
+    glClear(GL_COLOR_BUFFER_BIT
+            | GL_DEPTH_BUFFER_BIT
+            | GL_STENCIL_BUFFER_BIT);
+}
+
+void draw_list(struct draw *draws, GLuint ndraws, GLuint projection)
+{
+    if (ndraws < 1)
+        return;
     // Set projection matrix
     GLfloat *proj_matrix = identity4;
     switch (projection) {
@@ -133,26 +145,27 @@ void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
     }
     glUniformMatrix4fv(proj_matrix_location, 1, GL_FALSE, proj_matrix);
 
+    glBindVertexArray(draws[0].vao);
+    glBindTexture(GL_TEXTURE_2D, draws[0].tex);
+
     GLfloat model_matrix[16];
     memcpy(model_matrix, identity4, sizeof(identity4));
+
     for (GLuint i = 0; i < ndraws; i++) {
         struct draw *d = &draws[i];
-        // Set up model matrix
-        mat_set(model_matrix, 3, 0, d->pos.x);
-        mat_set(model_matrix, 3, 1, d->pos.y);
-        mat_set(model_matrix, 3, 2, d->pos.z);
-        glUniformMatrix4fv(model_matrix_location, 1, GL_FALSE, model_matrix);
-        // Draw
-        if (!same_vao || i == 0)
-            glBindVertexArray(d->vao);
-        if (!same_tex || i == 0)
-            glBindTexture(GL_TEXTURE_2D, d->tex);
-        glDrawArrays(GL_TRIANGLES, 0, 6); // TODO Not always 6
+        offsets[i * 3 + 0] = d->pos.x;
+        offsets[i * 3 + 1] = d->pos.y;
+        offsets[i * 3 + 2] = d->pos.z;
     }
+    glBindBuffer(GL_ARRAY_BUFFER, vao_offsets_buf);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 3 * ndraws, offsets);
+
+    glUniformMatrix4fv(model_matrix_location, 1,
+            GL_FALSE, model_matrix);
+
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ndraws);
+
     // Unbind everything to clean up
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    if (projection == PROJECTION_ORTHOGRAPHIC)
-        return;
 }

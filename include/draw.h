@@ -20,7 +20,8 @@ void draw_init(GLfloat view_distance, GLfloat fov_rad, GLfloat near_clip,
         GLfloat far_clip, GLfloat ortho_width, GLfloat ortho_depth);
 void draw_set_dimensions(GLuint w, GLuint h);
 
-void draw_list(struct draw *draws, GLuint ndraws, GLuint projection,
-        bool same_vao, bool same_tex);
+void draw_clear(void);
+
+void draw_list(struct draw *draws, GLuint ndraws, GLuint projection);
 
 #endif
