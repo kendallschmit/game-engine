@@ -85,6 +85,12 @@ int kge_init(void)
     current_time = kge_timer_now();
     current_time_smooth = current_time;
 
+
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
+
     return 0;
 }
 

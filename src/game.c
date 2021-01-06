@@ -81,7 +81,7 @@ static void game_loop()
 
     // Ritsus are all perspective
     kprint("Set up ritsus");
-    GLuint nritsus = 10000;
+    GLuint nritsus = 200000;
     for (GLuint i = 0; i < nritsus; i++) {
         struct obj *o = &background_objs.objs[i];
         o->draw = &background_objs.draws[i];

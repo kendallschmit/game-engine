@@ -104,11 +104,12 @@ GLuint texture_load(char *path)
     GLuint tex; // Name of tex
     glGenTextures(1, &tex); // Generate texture
     glBindTexture(GL_TEXTURE_2D, tex); // Make active TEXTURE_2D
+    // TODO I thought you had to do this for each texture?
+    //glEnable(GL_TEXTURE_2D);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
             GL_RGB, GL_FLOAT, pix);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
     kprint("Loaded image \"%s\"", path);
     return tex;

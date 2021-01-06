@@ -3,9 +3,16 @@
 #include "stddef.h"
 
 GLuint vaos[VAO_MAX] = { 0 };
-GLuint vao_offsets_buf = 0;
+GLuint vao_inst_offsets_buf = 0;
 
 void vaos_init() {
+    // Buffer for instance offsets
+    glGenBuffers(1, &vao_inst_offsets_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, vao_inst_offsets_buf);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VAO_INST_MAX * 3,
+            NULL, GL_DYNAMIC_DRAW);
+
+    // VAO for quad
     GLuint vao; // Name of VAO
     glGenVertexArrays(1, &vao); // Generate one VAO
     glBindVertexArray(vao); // Make it active VAO
@@ -37,10 +44,6 @@ void vaos_init() {
          0.5, -0.5, 0.0,   1.0, 1.0,   // BR
     };
     // VERTEX BUFFER
-    glGenBuffers(1, &vao_offsets_buf);
-    glBindBuffer(GL_ARRAY_BUFFER, vao_offsets_buf);
-    glBufferData(GL_ARRAY_BUFFER, 3 * VAO_OFFSETS_MAX, NULL, GL_DYNAMIC_DRAW);
-
     GLuint buf; // Name of vertex buffer
     glGenBuffers(1, &buf); // Generate buffer
 
@@ -61,7 +64,7 @@ void vaos_init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // buf_offset should contain xyz offset for instances
-    glBindBuffer(GL_ARRAY_BUFFER, vao_offsets_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, vao_inst_offsets_buf);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
             sizeof(GLfloat) * 3, 0);
     glEnableVertexAttribArray(2);
