@@ -29,7 +29,7 @@ static uint64_t dt_hist[9] = { 0 };
 static size_t dt_hist_i = 0;
 static uint64_t dt_hist_median_smooth = 0;
 
-static uint64_t append_dt_hist(uint64_t dt);
+static void append_dt_hist(uint64_t dt);
 static uint64_t median_dt_hist(void);
 static uint64_t qselect(uint64_t *l, size_t n, size_t k);
 static size_t qpartition(uint64_t *l, size_t n, size_t p);
@@ -84,7 +84,6 @@ int kge_init(void)
     // Pretend the first frame time was right now
     current_time = kge_timer_now();
     current_time_smooth = current_time;
-
 
     GLenum error;
     while ((error = glGetError()) != GL_NO_ERROR) {
@@ -143,7 +142,7 @@ static void window_size_callback(GLFWwindow *glfw_window, int x, int y)
     draw_set_dimensions((GLfloat)x, (GLfloat)y);
 }
 
-static uint64_t append_dt_hist(uint64_t dt)
+static void append_dt_hist(uint64_t dt)
 {
     dt_hist[dt_hist_i++] = dt;
     dt_hist_i %= ARRAY_LEN(dt_hist);
