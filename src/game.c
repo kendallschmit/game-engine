@@ -32,6 +32,8 @@ struct obj {
 
 #define OBJECTS_MAX 1000000
 struct obj_group {
+    GLuint tex;
+    GLuint vao;
     struct draw draws[OBJECTS_MAX];
     struct obj objs[OBJECTS_MAX];
     GLuint count;
@@ -67,28 +69,26 @@ static void game_loop()
     kprint("Done loading textures");
 
     static struct obj_group background_objs = { 0 };
+    background_objs.vao = vaos[VAO_QUAD],
+    background_objs.tex = tex_ritsu;
     static struct obj_group foreground_objs = { 0 };
+    foreground_objs.vao = vaos[VAO_QUAD],
+    foreground_objs.tex = tex_akko;
 
     // Only orthographic object is player for now
     kprint("Set up player");
     struct obj *player = &foreground_objs.objs[0];
     player->draw = &foreground_objs.draws[0];
-    *player->draw = (struct draw){
-        .vao = vaos[VAO_QUAD],
-        .tex = tex_akko,
-    };
+    *player->draw = (struct draw){ 0 };
     foreground_objs.count = 1;
 
     // Ritsus are all perspective
     kprint("Set up ritsus");
-    GLuint nritsus = 200000;
+    GLuint nritsus = 100000;
     for (GLuint i = 0; i < nritsus; i++) {
         struct obj *o = &background_objs.objs[i];
         o->draw = &background_objs.draws[i];
-        *o->draw = (struct draw){
-            .vao = vaos[VAO_QUAD],
-            .tex = tex_ritsu,
-        };
+        *o->draw = (struct draw){ 0 };
         o->pos = (struct vec3i) {
             randi(-1000 * SCALE, 1000 * SCALE),
             randi(-1000 * SCALE, 1000 * SCALE),
@@ -138,9 +138,11 @@ static void game_loop()
 
         // Draw objects
         draw_clear();
-        draw_list(background_objs.draws, background_objs.count,
+        draw_list(background_objs.vao, background_objs.tex,
+                background_objs.draws, background_objs.count,
                 PROJECTION_PERSPECTIVE);
-        draw_list(foreground_objs.draws, foreground_objs.count,
+        draw_list(foreground_objs.vao, foreground_objs.tex,
+                foreground_objs.draws, foreground_objs.count,
                 PROJECTION_ORTHOGRAPHIC);
 
         uint64_t draw_end = kge_timer_now();

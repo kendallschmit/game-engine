@@ -11,7 +11,7 @@ static GLfloat inst_offsets[3 * VAO_INST_MAX] = { 0 };
 
 // Identity matrix used to reset other matrices
 static GLfloat identity4[] = {
-    1.0, 0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 0.0, // This is *probably* a column going left to right...
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
@@ -28,7 +28,7 @@ static void print_mat(GLfloat *mat)
 }
 
 // Each row is an x, y, z, w
-#define mat_set(mat, r, c, v) do { (mat)[(r) * 4 + (c)] = (v); } while(0);
+#define mat_set(mat, c, r, v) do { (mat)[(c) * 4 + (r)] = (v); } while(0);
 
 // Generate a perspective projection matrix
 static void gen_perspective_matrix(GLfloat *mat, GLfloat angle, GLfloat ratio,
@@ -120,10 +120,11 @@ void draw_clear(void)
             | GL_STENCIL_BUFFER_BIT);
 }
 
-void draw_list(struct draw *draws, GLuint ndraws, GLuint projection)
+void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
+        GLuint projection)
 {
     while (ndraws > VAO_INST_MAX) {
-        draw_list(draws, VAO_INST_MAX, projection);
+        draw_list(vao, tex, draws, VAO_INST_MAX, projection);
         draws = &draws[VAO_INST_MAX];
         ndraws -= VAO_INST_MAX;
     }
@@ -145,8 +146,8 @@ void draw_list(struct draw *draws, GLuint ndraws, GLuint projection)
     }
     glUniformMatrix4fv(proj_matrix_location, 1, GL_FALSE, proj_matrix);
 
-    glBindVertexArray(draws[0].vao);
-    glBindTexture(GL_TEXTURE_2D, draws[0].tex);
+    glBindVertexArray(vao);
+    glBindTexture(GL_TEXTURE_2D, tex);
 
     for (GLuint i = 0; i < ndraws; i++) {
         struct draw *d = &draws[i];
@@ -158,6 +159,7 @@ void draw_list(struct draw *draws, GLuint ndraws, GLuint projection)
     glBindBuffer(GL_ARRAY_BUFFER, vao_inst_offsets_buf);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 3 * ndraws,
             inst_offsets);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ndraws);
 

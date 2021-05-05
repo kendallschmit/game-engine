@@ -22,6 +22,7 @@ void draw_set_dimensions(GLuint w, GLuint h);
 
 void draw_clear(void);
 
-void draw_list(struct draw *draws, GLuint ndraws, GLuint projection);
+void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
+        GLuint projection);
 
 #endif
