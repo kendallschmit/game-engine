@@ -70,6 +70,9 @@ static GLfloat view_matrix[16];
 static GLint view_matrix_location;
 static GLint proj_matrix_location;
 
+static GLint line_position_location;
+static GLint line_scale_location;
+
 static GLfloat view_distance;
 static GLfloat fov_rad;
 static GLfloat near_clip;
@@ -91,13 +94,19 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
     glEnable(GL_DEPTH_TEST);
 
     // Use simple shader and figure out where the parameters go
-    glUseProgram(shader_program_simple);
     view_matrix_location = glGetUniformLocation(shader_program_simple,
             "viewmat");
     proj_matrix_location = glGetUniformLocation(shader_program_simple,
             "projmat");
 
+    // Line shader
+    line_position_location = glGetUniformLocation(shader_program_line,
+            "position");
+    line_scale_location = glGetUniformLocation(shader_program_line,
+            "scale");
+
     // Can generate view matrix now because camera never moves
+    glUseProgram(shader_program_simple);
     memcpy(view_matrix, identity4, sizeof(view_matrix));
     mat_set(view_matrix, 3, 2, -view_distance);
     glUniformMatrix4fv(view_matrix_location, 1, GL_FALSE, view_matrix);
@@ -123,6 +132,8 @@ void draw_clear(void)
 void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
         GLuint projection)
 {
+    glUseProgram(shader_program_simple);
+
     while (ndraws > VAO_INST_MAX) {
         draw_list(vao, tex, draws, VAO_INST_MAX, projection);
         draws = &draws[VAO_INST_MAX];
@@ -156,7 +167,7 @@ void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
         inst_offsets[i * 3 + 2] = d->pos.z;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, vao_inst_offsets_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, vao_buffers[VAO_BUFFERS_INST_OFFSETS]);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 3 * ndraws,
             inst_offsets);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -166,4 +177,26 @@ void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
     // Unbind everything to clean up
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void draw_lines(struct vec2 position, struct vec2 scale,
+        GLfloat *values, GLuint nvalues)
+{
+    if (nvalues < 2)
+        return;
+    glUseProgram(shader_program_line);
+
+    glUniform2f(line_position_location, position.x, position.y);
+    glUniform2f(line_scale_location, scale.x, scale.y);
+
+    glBindVertexArray(vaos[VAO_LINE]);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vao_buffers[VAO_BUFFERS_LINE_VALUES]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * nvalues, values);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDrawArraysInstanced(GL_LINES, 0, 2, nvalues - 1);
+
+    // Unbind everything to clean up
+    glBindVertexArray(0);
 }

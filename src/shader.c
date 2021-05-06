@@ -6,6 +6,7 @@
 #define SHADER_SOURCE_LEN 4096
 
 GLuint shader_program_simple = 0;
+GLuint shader_program_line = 0;
 
 static GLuint load_shader(char *path, GLenum shader_type) {
     FILE *f = fopen(path, "r");
@@ -39,26 +40,48 @@ static GLuint load_shader(char *path, GLenum shader_type) {
     return shad;
 }
 
-static GLuint fshad = 0;
-static GLuint vshad = 0;
+// Fragment shaders
+static GLuint fragment_simple_uv = 0;
+static GLuint fragment_simple_color = 0;
+
+static GLuint vertex_simple_instanced = 0;
+static GLuint vertex_line = 0;
 
 void shader_init() {
-    vshad = load_shader("res/shader/simple_vertex.glsl", GL_VERTEX_SHADER);
-    fshad = load_shader("res/shader/simple_fragment.glsl", GL_FRAGMENT_SHADER);
+    fragment_simple_uv = load_shader("res/shader/simple_fragment.glsl",
+            GL_FRAGMENT_SHADER);
+    fragment_simple_color = load_shader("res/shader/simple_color.glsl",
+            GL_FRAGMENT_SHADER);
 
-    // Make a basic program, attach shaders
+    vertex_simple_instanced = load_shader("res/shader/simple_vertex.glsl",
+            GL_VERTEX_SHADER);
+    vertex_line = load_shader("res/shader/simple_line.glsl",
+            GL_VERTEX_SHADER);
+
+    // Program for vertex shader
     shader_program_simple = glCreateProgram();
-    glAttachShader(shader_program_simple, vshad);
-    glAttachShader(shader_program_simple, fshad);
-
+    glAttachShader(shader_program_simple, vertex_simple_instanced);
+    glAttachShader(shader_program_simple, fragment_simple_uv);
     glLinkProgram(shader_program_simple);
+
+    // Program for line shader
+    shader_program_line = glCreateProgram();
+    glAttachShader(shader_program_line, vertex_line);
+    glAttachShader(shader_program_line, fragment_simple_color);
+    glLinkProgram(shader_program_line);
 }
 
 void shader_deinit() {
-    glDeleteShader(vshad);
-    glDeleteShader(fshad);
+    glDeleteShader(fragment_simple_uv);
+    glDeleteShader(fragment_simple_color);
+    glDeleteShader(vertex_simple_instanced);
+    glDeleteShader(vertex_line);
 
-    glDetachShader(shader_program_simple, vshad);
-    glDetachShader(shader_program_simple, fshad);
+    glDetachShader(shader_program_simple, vertex_simple_instanced);
+    glDetachShader(shader_program_simple, fragment_simple_uv);
     glDeleteProgram(shader_program_simple);
+
+    glDetachShader(shader_program_line, vertex_line);
+    glDetachShader(shader_program_line, fragment_simple_color);
+    glDeleteProgram(shader_program_line);
 }
