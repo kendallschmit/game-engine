@@ -72,6 +72,7 @@ static GLint proj_matrix_location;
 
 static GLint line_position_location;
 static GLint line_scale_location;
+static GLint line_in_color_location;
 
 static GLfloat view_distance;
 static GLfloat fov_rad;
@@ -91,8 +92,6 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
     ortho_width = ortho_width_a;
     ortho_depth = ortho_depth_a;
 
-    glEnable(GL_DEPTH_TEST);
-
     // Use simple shader and figure out where the parameters go
     view_matrix_location = glGetUniformLocation(shader_program_simple,
             "viewmat");
@@ -104,6 +103,8 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
             "position");
     line_scale_location = glGetUniformLocation(shader_program_line,
             "scale");
+    line_in_color_location = glGetUniformLocation(shader_program_line,
+            "in_color");
 
     // Can generate view matrix now because camera never moves
     glUseProgram(shader_program_simple);
@@ -132,6 +133,7 @@ void draw_clear(void)
 void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
         GLuint projection)
 {
+    glEnable(GL_DEPTH_TEST);
     glUseProgram(shader_program_simple);
 
     while (ndraws > VAO_INST_MAX) {
@@ -179,15 +181,18 @@ void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void draw_lines(struct vec2 position, struct vec2 scale,
+void draw_lines(struct vec2 position, struct vec2 scale, struct vec3 color,
         GLfloat *values, GLuint nvalues)
 {
     if (nvalues < 2)
         return;
+    glDisable(GL_DEPTH_TEST);
+
     glUseProgram(shader_program_line);
 
     glUniform2f(line_position_location, position.x, position.y);
     glUniform2f(line_scale_location, scale.x, scale.y);
+    glUniform4f(line_in_color_location, color.x, color.y, color.z, 1.0);
 
     glBindVertexArray(vaos[VAO_LINE]);
 

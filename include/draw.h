@@ -25,7 +25,7 @@ void draw_clear(void);
 void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
         GLuint projection);
 
-void draw_lines(struct vec2 position, struct vec2 scale,
+void draw_lines(struct vec2 position, struct vec2 scale, struct vec3 color,
         GLfloat *values, GLuint nvalues);
 
 #endif
