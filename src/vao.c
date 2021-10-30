@@ -1,6 +1,8 @@
 #include "vao.h"
 
-#include "stddef.h"
+#include <stddef.h>
+
+#include "kge_util.h"
 
 GLuint vaos[VAO_MAX] = { 0 };
 GLuint vao_buffers[VAO_BUFFERS_MAX] = { 0 };
@@ -13,6 +15,10 @@ void vaos_init(void) {
     glGenBuffers(VAO_BUFFERS_MAX, vao_buffers);
     init_quad();
     init_line();
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
 }
 
 void vaos_deinit(void) {

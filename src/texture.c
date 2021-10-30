@@ -109,4 +109,8 @@ static GLuint load_tga(uint8_t *buf, size_t len, const char *name)
 extern void texture_init()
 {
     res_tga_for_each(LOAD_TGA)
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
 }

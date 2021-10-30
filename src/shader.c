@@ -70,6 +70,11 @@ void shader_init() {
     glAttachShader(shader_program_line, vertex_line);
     glAttachShader(shader_program_line, fragment_simple_color);
     glLinkProgram(shader_program_line);
+
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
 }
 
 void shader_deinit() {

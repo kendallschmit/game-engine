@@ -111,6 +111,11 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
     memcpy(view_matrix, identity4, sizeof(view_matrix));
     mat_set(view_matrix, 3, 2, -view_distance);
     glUniformMatrix4fv(view_matrix_location, 1, GL_FALSE, view_matrix);
+
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
 }
 
 void draw_set_dimensions(GLuint w, GLuint h)
