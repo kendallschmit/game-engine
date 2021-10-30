@@ -32,7 +32,8 @@ resdir = res
 # Compile/link options
 CC ?= gcc
 CFLAGS += -I$(includedir) -I$(builddir) -O2 -std=c11
-CFLAGS += -Wpedantic -Werror -Wfatal-errors
+CFLAGS += -Wpedantic -Werror -Wfatal-errors -Wall
+CFLAGS += -Wno-unused-function -Wno-unused-variable
 CFLAGS += -MMD
 LDFLAGS += -L$(libdir)
 LDLIBS += -lm -lglfw
