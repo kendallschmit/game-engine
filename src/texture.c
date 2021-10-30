@@ -97,9 +97,13 @@ static GLuint load_tga(uint8_t *buf, size_t len, const char *name)
             GL_RGB, GL_FLOAT, pix);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glEnable(GL_TEXTURE_2D);
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        kprint("GL Error: 0x%x", (int)error);
+    }
     glBindTexture(GL_TEXTURE_2D, 0);
     kprint("Loaded tga \"%s\"", name);
+
     return tex;
 }
 
@@ -108,6 +112,9 @@ static GLuint load_tga(uint8_t *buf, size_t len, const char *name)
     } while (0);
 extern void texture_init()
 {
+
+    // TODO Why did I think I needed this?
+    // glEnable(GL_TEXTURE_2D);
     res_tga_for_each(LOAD_TGA)
     GLenum error;
     while ((error = glGetError()) != GL_NO_ERROR) {
