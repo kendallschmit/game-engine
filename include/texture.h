@@ -3,6 +3,12 @@
 
 #include <glad/glad.h>
 
-GLuint texture_load(char *path);
+#include "res_tga.h"
+
+#define DECLARE_TEXTURE(name) GLuint texture_ ## name;
+res_tga_for_each(DECLARE_TEXTURE)
+
+void texture_init();
+// TODO texture_deinit()?
 
 #endif

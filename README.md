@@ -12,6 +12,16 @@ specific things I hope this engine can do:
 
 - Be fully deterministic (replays work on any platform)  
 
+## Building
+
+Run `make` from within the `tools` directory. Right now, this just builds
+a program called `resgen` that generates a C source representation of resource
+files.  
+
+Once the tools are built, you can run `make` from within the root directory to
+build the demo. You will have to figure out dependencies on your own and may
+have to modify the Makefile for your platform.  
+
 ## Stuff I am trying (or plan to try)
 
 I doubt any of these ideas are brand new or cutting-edge, but they are the

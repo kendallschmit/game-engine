@@ -70,6 +70,7 @@ int kge_init(void)
     // Init engine submodules
     input_init(window);
     shader_init();
+    texture_init();
     vaos_init();
     draw_init(5, 1.5, 0.1, 1000, 6, 1000);
 

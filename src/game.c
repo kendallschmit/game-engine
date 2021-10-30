@@ -62,18 +62,12 @@ int game_run(void)
 
 static void game_loop()
 {
-    kprint("Load textures");
-    // Load textures
-    GLuint tex_akko = texture_load("res/tga/akko.tga");
-    GLuint tex_ritsu = texture_load("res/tga/ritsu128.tga");
-    kprint("Done loading textures");
-
     static struct obj_group background_objs = { 0 };
     background_objs.vao = vaos[VAO_QUAD],
-    background_objs.tex = tex_ritsu;
+    background_objs.tex = texture_ritsu;
     static struct obj_group foreground_objs = { 0 };
     foreground_objs.vao = vaos[VAO_QUAD],
-    foreground_objs.tex = tex_akko;
+    foreground_objs.tex = texture_akko;
 
     // Only orthographic object is player for now
     kprint("Set up player");
