@@ -7,6 +7,9 @@
 #include "vao.h"
 #include "kge_util.h"
 
+static GLuint screen_width = 1;
+static GLuint screen_height = 1;
+
 static GLfloat inst_offsets[3 * VAO_INST_MAX] = { 0 };
 
 // Identity matrix used to reset other matrices
@@ -72,6 +75,8 @@ static GLint proj_matrix_location;
 
 static GLint line_position_location;
 static GLint line_scale_location;
+static GLint line_screen_dimensions_location;
+static GLint line_radius_location;
 static GLint line_in_color_location;
 
 static GLfloat view_distance;
@@ -103,6 +108,10 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
             "position");
     line_scale_location = glGetUniformLocation(shader_program_line,
             "scale");
+    line_screen_dimensions_location = glGetUniformLocation(shader_program_line,
+            "screen_dimensions");
+    line_radius_location = glGetUniformLocation(shader_program_line,
+            "radius");
     line_in_color_location = glGetUniformLocation(shader_program_line,
             "in_color");
 
@@ -120,6 +129,8 @@ void draw_init(GLfloat view_distance_a, GLfloat fov_rad_a,
 
 void draw_set_dimensions(GLuint w, GLuint h)
 {
+    screen_width = w;
+    screen_height = h;
     // Have to regenerat projection matrices for new aspect ratio
     GLfloat ratio = (GLfloat)w / h;
     gen_perspective_matrix(perspective_matrix, fov_rad, ratio,
@@ -167,27 +178,23 @@ void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
     glBindVertexArray(vao);
     glBindTexture(GL_TEXTURE_2D, tex);
 
-    for (GLuint i = 0; i < ndraws; i++) {
-        struct draw *d = &draws[i];
-        inst_offsets[i * 3 + 0] = d->pos.x;
-        inst_offsets[i * 3 + 1] = d->pos.y;
-        inst_offsets[i * 3 + 2] = d->pos.z;
+    while (ndraws > VAO_INST_MAX) {
+        draw_list_raw(draws, VAO_INST_MAX);
+        draws = &draws[VAO_INST_MAX];
+        ndraws -= VAO_INST_MAX;
     }
-
-    glBindBuffer(GL_ARRAY_BUFFER, vao_buffers[VAO_BUFFERS_INST_OFFSETS]);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 3 * ndraws,
-            inst_offsets);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ndraws);
+    if (ndraws > 0)
+    {
+        draw_list_raw(draws, ndraws);
+    }
 
     // Unbind everything to clean up
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void draw_lines(struct vec2 position, struct vec2 scale, struct vec3 color,
-        GLfloat *values, GLuint nvalues)
+void draw_lines(struct vec2 position, struct vec2 scale, GLfloat width,
+        struct vec3 color, GLfloat *values, GLuint nvalues)
 {
     if (nvalues < 2)
         return;
@@ -197,6 +204,8 @@ void draw_lines(struct vec2 position, struct vec2 scale, struct vec3 color,
 
     glUniform2f(line_position_location, position.x, position.y);
     glUniform2f(line_scale_location, scale.x, scale.y);
+    glUniform2f(line_screen_dimensions_location, screen_width, screen_height);
+    glUniform1f(line_radius_location, width / 2);
     glUniform4f(line_in_color_location, color.x, color.y, color.z, 1.0);
 
     glBindVertexArray(vaos[VAO_LINE]);
@@ -205,7 +214,7 @@ void draw_lines(struct vec2 position, struct vec2 scale, struct vec3 color,
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * nvalues, values);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDrawArraysInstanced(GL_LINES, 0, 2, nvalues - 1);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, nvalues - 1);
 
     // Unbind everything to clean up
     glBindVertexArray(0);

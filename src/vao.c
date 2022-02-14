@@ -76,7 +76,7 @@ static void init_line(void)
 
     // Line through center
     GLfloat line_buf[] = {
-        0.0,  1.0,
+        0.0, 0.0, 1.0, 1.0,
     };
     // VERTEX BUFFER
     // glVertexAttribPointer(index, size, type, normalized, stride, offset)
