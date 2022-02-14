@@ -146,19 +146,28 @@ void draw_clear(void)
             | GL_STENCIL_BUFFER_BIT);
 }
 
+
+static void draw_list_raw(struct draw *draws, GLuint ndraws)
+{
+    for (GLuint i = 0; i < ndraws; i++) {
+        struct draw *d = &draws[i];
+        inst_offsets[i * 3 + 0] = d->pos.x;
+        inst_offsets[i * 3 + 1] = d->pos.y;
+        inst_offsets[i * 3 + 2] = d->pos.z;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, vao_buffers[VAO_BUFFERS_INST_OFFSETS]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 3 * ndraws,
+            inst_offsets);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ndraws);
+}
+
 void draw_list(GLuint vao, GLuint tex, struct draw *draws, GLuint ndraws,
         GLuint projection)
 {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(shader_program_simple);
-
-    while (ndraws > VAO_INST_MAX) {
-        draw_list(vao, tex, draws, VAO_INST_MAX, projection);
-        draws = &draws[VAO_INST_MAX];
-        ndraws -= VAO_INST_MAX;
-    }
-    if (ndraws < 1)
-        return;
 
     // Set projection matrix
     GLfloat *proj_matrix = identity4;
