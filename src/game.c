@@ -96,6 +96,9 @@ static void game_loop()
     uint64_t draw_time = 0;
     uint64_t draw_count = 0;
 
+    uint64_t physics_time = 0;
+    uint64_t physics_count = 0;
+
     // Gameplay loop
     while (!input.quit) {
         // Show the frame (blocks until it is displayed on screen)
@@ -143,9 +146,14 @@ static void game_loop()
 
         draw_time += draw_end - draw_start;
         draw_count++;
+
+        physics_time += physics_end - physics_start;
+        physics_count++;
     }
     kprint("average draw time: %fms",
             (float)(draw_time / draw_count) / 1000000);
+    kprint("average physics time: %fms",
+            (float)(physics_time / physics_count) / 1000000);
 }
 
 static void physics_update(struct obj_group *group, uint64_t nanos)
