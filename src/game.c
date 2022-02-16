@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,14 +16,13 @@
 #include "shader.h"
 #include "texture.h"
 #include "draw.h"
-#include "vao.h"
 
 #define NANOS 1000000000l
 #define MICROS 1000000l
 #define MILLIS 1000l
 #define SCALE MICROS
 
-#define MOVE_SPEED 20
+#define MOVE_SPEED 50
 
 struct obj {
     struct vec3i pos;
@@ -33,7 +33,7 @@ struct obj {
 #define OBJECTS_MAX 1000000
 struct obj_group {
     GLuint tex;
-    GLuint vao;
+    GLuint model;
     struct draw draws[OBJECTS_MAX];
     struct obj objs[OBJECTS_MAX];
     GLuint count;
@@ -63,10 +63,10 @@ int game_run(void)
 static void game_loop()
 {
     static struct obj_group background_objs = { 0 };
-    background_objs.vao = vaos[VAO_QUAD],
+    background_objs.model = draw_model_quad;
     background_objs.tex = texture_ritsu;
     static struct obj_group foreground_objs = { 0 };
-    foreground_objs.vao = vaos[VAO_QUAD],
+    foreground_objs.model = draw_model_cube;
     foreground_objs.tex = texture_akko;
 
     // Only orthographic object is player for now
@@ -86,10 +86,8 @@ static void game_loop()
         o->pos = (struct vec3i) {
             randi(-1000 * SCALE, 1000 * SCALE),
             randi(-1000 * SCALE, 1000 * SCALE),
-            randi(-1000 * SCALE, 10 * SCALE),
+            randi(-1000 * SCALE, 0 * SCALE),
         };
-        o->vel.z = 80;
-        //o->vel.y = 80;
     }
     background_objs.count = nritsus;
 
@@ -98,6 +96,8 @@ static void game_loop()
 
     uint64_t physics_time = 0;
     uint64_t physics_count = 0;
+
+    struct vec3 view_origin = { 0, 100, 100 };
 
     // Gameplay loop
     while (!input.quit) {
@@ -115,9 +115,9 @@ static void game_loop()
         // Apply velocity to player
         player->vel = (struct vec3i){ 0, 0, 0 };
         if (input.up)
-            player->vel.y = MOVE_SPEED;
+            player->vel.z = -MOVE_SPEED;
         if (input.down)
-            player->vel.y = -MOVE_SPEED;
+            player->vel.z = MOVE_SPEED;
         if (input.left)
             player->vel.x = -MOVE_SPEED;
         if (input.right)
@@ -127,20 +127,28 @@ static void game_loop()
         physics_update(&background_objs, delta_time);
         physics_update(&foreground_objs, delta_time);
 
-        if (player->pos.x > 8 * SCALE)
-            player->pos.x = -8 * SCALE;
+        GLfloat f = 6 * ((GLfloat)delta_time) / NANOS;
+        if (f > 1)
+            f = 1;
+        view_origin.x = (player->draw->pos.x * f + view_origin.x * (1 - f));
+        view_origin.y = 0;
+        view_origin.z = ((player->draw->pos.z + 5) * f + view_origin.z * (1 - f));
+
+        draw_look_at(view_origin,
+                player->draw->pos,
+                (struct vec3){ 0, 1, 0 });
 
         uint64_t physics_end = kge_timer_now();
         uint64_t draw_start = physics_end;
 
         // Draw objects
         draw_clear();
-        draw_list(background_objs.vao, background_objs.tex,
+        draw_models(background_objs.model, background_objs.tex,
                 background_objs.draws, background_objs.count,
                 PROJECTION_PERSPECTIVE);
-        draw_list(foreground_objs.vao, foreground_objs.tex,
+        draw_models(foreground_objs.model, foreground_objs.tex,
                 foreground_objs.draws, foreground_objs.count,
-                PROJECTION_ORTHOGRAPHIC);
+                PROJECTION_PERSPECTIVE);
 
         uint64_t draw_end = kge_timer_now();
 
@@ -165,10 +173,6 @@ static void physics_update(struct obj_group *group, uint64_t nanos)
         o->pos.x += o->vel.x * deltatime;
         o->pos.y += o->vel.y * deltatime;
         o->pos.z += o->vel.z * deltatime;
-
-        while (o->pos.z > 10 * SCALE) {
-            o->pos.z -= 1010 * SCALE;
-        }
 
         o->draw->pos.x = (GLfloat)o->pos.x / SCALE;
         o->draw->pos.y = (GLfloat)o->pos.y / SCALE;

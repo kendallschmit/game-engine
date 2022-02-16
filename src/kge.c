@@ -14,7 +14,6 @@
 #include "input.h"
 #include "shader.h"
 #include "texture.h"
-#include "vao.h"
 #include "draw.h"
 
 #define WHITE           ((struct vec3){ 1.0, 1.0, 1.0 })
@@ -145,8 +144,7 @@ int kge_init(void)
     input_init(window);
     shader_init();
     texture_init();
-    vaos_init();
-    draw_init(5, 1.5, 0.1, 1000, 6, 1000);
+    draw_init(5, 1.5, 0.1, 1000, 10, 1000);
 
     // Set initial draw size
     int winx, winy;
@@ -171,7 +169,6 @@ int kge_init(void)
 void kge_deinit(void)
 {
     // Deinit submodules
-    vaos_deinit();
     shader_deinit();
 
     // Clean up GLFW
