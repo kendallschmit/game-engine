@@ -22,7 +22,7 @@
 #define MILLIS 1000l
 #define SCALE MICROS
 
-#define MOVE_SPEED 50
+#define MOVE_SPEED 40
 
 struct obj {
     struct vec3i pos;
@@ -130,9 +130,11 @@ static void game_loop()
         GLfloat f = 6 * ((GLfloat)delta_time) / NANOS;
         if (f > 1)
             f = 1;
-        view_origin.x = (player->draw->pos.x * f + view_origin.x * (1 - f));
+
         view_origin.y = 0;
-        view_origin.z = ((player->draw->pos.z + 5) * f + view_origin.z * (1 - f));
+        view_origin = vec3_norm(vec3_diff(view_origin, player->draw->pos));
+        view_origin = vec3_scale(view_origin, 5);
+        view_origin = vec3_sum(view_origin, player->draw->pos);
 
         draw_look_at(view_origin,
                 player->draw->pos,

@@ -15,10 +15,10 @@ struct vec3 vec3_norm(struct vec3 v)
     return (struct vec3){ v.x / m, v.y / m, v.z / m };
 }
 
-struct vec3 vec3_neg(struct vec3 v)
+struct vec3 vec3_scale(struct vec3 v, GLfloat s)
 {
     GLfloat m = vec3_magnitude(v);
-    return (struct vec3){ -v.x, -v.y, -v.z };
+    return (struct vec3){ v.x * s, v.y * s, v.z * s };
 }
 
 struct vec3 vec3_sum(struct vec3 a, struct vec3 b)

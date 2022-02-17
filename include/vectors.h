@@ -20,7 +20,7 @@ struct vec3i {
 
 GLfloat vec3_magnitude(struct vec3 v);
 struct vec3 vec3_norm(struct vec3 v);
-struct vec3 vec3_neg(struct vec3 v);
+struct vec3 vec3_scale(struct vec3 v, GLfloat s);
 struct vec3 vec3_sum(struct vec3 a, struct vec3 b);
 struct vec3 vec3_diff(struct vec3 a, struct vec3 b);
 GLfloat vec3_dot(struct vec3 a, struct vec3 b);
